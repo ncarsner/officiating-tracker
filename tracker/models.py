@@ -1,32 +1,31 @@
 from django.db import models
 
-# Create your models here.
 
 class Game(models.Model):
-    id = models.AutoField(primary_key=True)
-    site = models.CharField(max_length=100, blank=False)
-    league = models.CharField(max_length=100, blank=False)
-    # db_handler = models.ForeignKey("DatabaseHandler", on_delete=models.CASCADE)
-    date = models.DateField(auto_now_add=True)
-    assignor = models.CharField(max_length=100, blank=False)
-    game_fee = models.PositiveIntegerField(max_length=10, blank=False)
+    date = models.DateField()
+    # Many-to-One: many games can be played at a site
+    site = models.ForeignKey("Site", related_name="name", on_delete=models.CASCADE)
+    # Many-to-One: many games can belong to the same league/organization
+    league = models.ForeignKey("League", related_name="organization", on_delete=models.CASCADE)
+    # Many-to-One: many games can have the same assignor
+    assignor = models.ForeignKey("League", related_name="assignor", on_delete=models.CASCADE)
+    # Many-to-One: many games can have the same game fee
+    game_fee = models.ForeignKey("League", related_name="game_fee", on_delete=models.CASCADE)
+
     fee_paid = models.BooleanField(default=False)
     is_volunteer = models.BooleanField(default=False)
     mileage = models.FloatField(default=0.0)
     mileage_paid = models.BooleanField(default=False)
-    position = models.CharField(max_length=50, blank=True)
+    position = models.CharField(max_length=50, blank=True, null=True)
+
 
 class Site(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, blank=False)
-    address = models.CharField(max_length=255, blank=False)
-    # city = models.CharField(max_length=100, blank=False)
-    # state = models.CharField(max_length=50, blank=False)
-    # zip_code = models.CharField(max_length=10, blank=False)
+    name = models.CharField(max_length=100, blank=False, null=False)
+    address = models.CharField(max_length=255, blank=False, null=False)
+
 
 class League(models.Model):
-    id = models.AutoField(primary_key=True)
-    organization = models.CharField(max_length=100, blank=False)
-    contact_person = models.CharField(max_length=100, blank=False)
-    # name = models.CharField(max_length=100, blank=False)
+    organization = models.CharField(max_length=100, blank=False, null=False)
+    assignor = models.CharField(max_length=100, blank=False, null=False)
+    game_fee = models.DecimalField(max_digits=6, decimal_places=2, blank=False)
     description = models.TextField(blank=True)
