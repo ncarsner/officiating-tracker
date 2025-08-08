@@ -4,14 +4,9 @@ from django.db import models
 class Game(models.Model):
     date = models.DateField()
     # Many-to-One: many games can be played at a site
-    site = models.ForeignKey("Site", related_name="name", on_delete=models.CASCADE)
+    site = models.ForeignKey("Site", on_delete=models.CASCADE)
     # Many-to-One: many games can belong to the same league/organization
-    league = models.ForeignKey("League", related_name="organization", on_delete=models.CASCADE)
-    # Many-to-One: many games can have the same assignor
-    assignor = models.ForeignKey("League", related_name="assignor", on_delete=models.CASCADE)
-    # Many-to-One: many games can have the same game fee
-    game_fee = models.ForeignKey("League", related_name="game_fee", on_delete=models.CASCADE)
-
+    league = models.ForeignKey("League", on_delete=models.CASCADE)
     fee_paid = models.BooleanField(default=False)
     is_volunteer = models.BooleanField(default=False)
     mileage = models.FloatField(default=0.0)
