@@ -13,10 +13,16 @@ class Game(models.Model):
     mileage_paid = models.BooleanField(default=False)
     position = models.CharField(max_length=50, blank=True, null=True)
 
+    def __str__(self):
+        return f"Game on {self.date} at {self.site}"
+
 
 class Site(models.Model):
     name = models.CharField(max_length=100, blank=False, null=False)
     address = models.CharField(max_length=255, blank=False, null=False)
+
+    def __str__(self):
+        return self.name
 
 
 class League(models.Model):
@@ -24,3 +30,6 @@ class League(models.Model):
     assignor = models.CharField(max_length=100, blank=False, null=False)
     game_fee = models.DecimalField(max_digits=6, decimal_places=2, blank=False)
     description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.organization
