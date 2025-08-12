@@ -9,7 +9,6 @@ class GameAdmin(admin.ModelAdmin):
         "date",
         "site",
         "league",
-        # "game_fee",
         "fee_paid",
         "is_volunteer",
         "mileage",
