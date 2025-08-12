@@ -8,8 +8,9 @@
         {% for game in games %}
             <!-- <li><a href="{% url 'game_detail' game.pk %}">{{ game.name }}</a></li> -->
             <div class="game-details">
-                <p>Location: {{ game.location }}</p>
                 <p>Date: {{ game.date }}</p>
+                <p>Location: {{ game.site.name }}</p>
+                <p>League: {{ game.league.organization }}</p>
             </div>
         {% endfor %}
     </ul>
