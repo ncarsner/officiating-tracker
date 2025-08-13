@@ -4,7 +4,7 @@ from tracker.models import Game, League, Site
 
 # Create your views here.
 def game_list(request):
-    games = Game.objects.all()
+    games = Game.objects.select_related('league', 'site').all()
     return render(request, 'game/list.html', {'games': games})
 
 def game_detail(request, pk):

@@ -14,10 +14,17 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path
+from django.conf import settings
+from django.urls import path, include
 from tracker import views
 
 urlpatterns = [
     path('', views.game_list, name='game_list'),
     path('game/<int:pk>/', views.game_detail, name='game_detail'),
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
