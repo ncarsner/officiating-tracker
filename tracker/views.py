@@ -5,12 +5,18 @@ from tracker.forms import GameForm
 
 # Create your views here.
 def game_list(request):
-    context = {}
     form = GameForm()
+    # TODO: handle successful form submission (e.g., redirect)
+    if request.method == 'POST':
+        form = GameForm(request.POST)
+        if form.is_valid():
+            form.save()
     games = Game.objects.select_related('league', 'site').all()
-    context['games'] = games
-    context['title'] = 'Game List'
-    context['form'] = form
+    context = {
+        'games': games,
+        'title': 'Game List',
+        'form': form
+    }
     return render(request, 'game/list.html', context)
 
 def game_detail(request, pk):
