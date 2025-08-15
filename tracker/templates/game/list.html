@@ -1,8 +1,12 @@
-{% extends 'base.html' %}
-
-{% block title %}Game List{% endblock %}
+{% extends 'base.html' %} {% block title %}Game List{% endblock %}
 {% block content %}
 <h2>Game List</h2>
+
+    <form method="post" action="{% url 'game_list' %}" class="space-y-4"> <!-- this links to View -->
+      {% csrf_token %} <!-- Django requires -->
+{{ form.as_p }}
+      <button name="save">Save</button>
+    </form>
 
 <table>
   <tr>
@@ -16,10 +20,8 @@
     <th>Mileage Paid</th>
   </tr>
   <tr>
-    {% for field in form %}
-    <td>{{ field }}</td>
-    {% endfor %}
-    <td><button name="save">Save</button></td>
+
+
   </tr>
   {% for game in games %}
   <tr class="game-details">
@@ -32,8 +34,13 @@
     <td>{{ game.mileage }}</td>
     <td>{{ game.mileage_paid }}</td>
     <td>
+
+      <!-- TODO: link styles as button // create new View to edit row as Form -->
       <button name="edit">Edit</button>
+
+      <!-- TODO: post request to separate view (FORM) -->
       <button name="delete">Delete</button>
+
     </td>
   </tr>
   {% endfor %}
