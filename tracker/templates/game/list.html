@@ -1,17 +1,48 @@
-{% extends 'base.html' %}
-
-{% block title %}Game List{% endblock %}
-
+{% extends 'base.html' %} {% block title %}Game List{% endblock %}
 {% block content %}
-    <h2>Game List</h2>
-    <ul>
-        {% for game in games %}
-            <!-- <li><a href="{% url 'game_detail' game.pk %}">{{ game.name }}</a></li> -->
-            <div class="game-details">
-                <p>Date: {{ game.date }}</p>
-                <p>Location: {{ game.site.name }}</p>
-                <p>League: {{ game.league.organization }}</p>
-            </div>
-        {% endfor %}
-    </ul>
+<h2>Game List</h2>
+
+    <form method="post" action="{% url 'game_list' %}" class="space-y-4"> <!-- this links to View -->
+      {% csrf_token %} <!-- Django requires -->
+{{ form.as_p }}
+      <button name="save">Save</button>
+    </form>
+
+<table>
+  <tr>
+    <th>Date</th>
+    <th>Site</th>
+    <th>League</th>
+    <th>Position</th>
+    <th>Fee Paid</th>
+    <th>Volunteer</th>
+    <th>Mileage</th>
+    <th>Mileage Paid</th>
+  </tr>
+  <tr>
+
+
+  </tr>
+  {% for game in games %}
+  <tr class="game-details">
+    <td>{{ game.date }}</td>
+    <td>{{ game.site.name }}</td>
+    <td>{{ game.league.organization }}</td>
+    <td>{{ game.position }}</td>
+    <td>{{ game.fee_paid }}</td>
+    <td>{{ game.is_volunteer }}</td>
+    <td>{{ game.mileage }}</td>
+    <td>{{ game.mileage_paid }}</td>
+    <td>
+
+      <!-- TODO: link styles as button // create new View to edit row as Form -->
+      <button name="edit">Edit</button>
+
+      <!-- TODO: post request to separate view (FORM) -->
+      <button name="delete">Delete</button>
+
+    </td>
+  </tr>
+  {% endfor %}
+</table>
 {% endblock %}
