@@ -18,7 +18,7 @@
     "url": "https://github.com/ncarsner/officiating-tracker/issues"
   },
   "homepage": "https://github.com/ncarsner/officiating-tracker#readme",
-  "dependencies": {
-    "tailwindcss": "^4.1.11"
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
   }
 }
