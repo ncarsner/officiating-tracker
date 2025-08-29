@@ -1,0 +1,24 @@
+{
+  "name": "officiating-tracker",
+  "version": "1.0.0",
+  "description": "Application design to track income and travel expenses related to seasonal officiating.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ncarsner/officiating-tracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ncarsner/officiating-tracker/issues"
+  },
+  "homepage": "https://github.com/ncarsner/officiating-tracker#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}
