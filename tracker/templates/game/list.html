@@ -1,9 +1,9 @@
 {% extends 'base.html' %} {% block title %}Game List{% endblock %}
 {% block content %}
 <h2>Game List</h2>
-
-    <form method="post" action="{% url 'game_list' %}" class="space-y-4"> <!-- this links to View -->
-      {% csrf_token %} <!-- Django requires -->
+    <!-- this links to the game list view -->
+    <form method="post" action="{% url 'game_list' %}" class="space-y-4">
+      {% csrf_token %}
 {{ form.as_p }}
       <button name="save">Save</button>
     </form>
@@ -35,11 +35,9 @@
     <td>{{ game.mileage_paid }}</td>
     <td>
 
-      <!-- TODO: link styles as button // create new View to edit row as Form -->
-      <button name="edit">Edit</button>
+      <a href="{% url 'edit_game' game.id %}" class="button" style="padding: 2px 4px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 4px;">Edit</a>
 
-      <!-- TODO: post request to separate view (FORM) -->
-      <button name="delete">Delete</button>
+      <a href="{% url 'delete_game' game.id %}" class="button" style="padding: 2px 4px; background-color: #797878; color: white; text-decoration: none; border-radius: 4px;">Delete</a>
 
     </td>
   </tr>
