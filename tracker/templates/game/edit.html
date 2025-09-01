@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %} Add Game {% endblock %}
+{% block title %} Edit Game {% endblock %}
 
 {% block content %}
 
     <form method="POST">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Add Game</button>
+        <button type="submit">Save Changes</button>
     </form>
 
     <a href="{% url 'game_list' %}">Back to Game List</a>
