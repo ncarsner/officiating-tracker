@@ -44,7 +44,7 @@ def edit_game(request: HttpRequest, pk: int) -> HttpResponse:
         form = GameForm(request.POST, instance=game)
         if form.is_valid():
             form.save()
-            return redirect("game_detail", pk=game.pk)
+            return redirect("game_list")
     else:
         form = GameForm(instance=game)
     context = {"form": form, "title": "Edit Game"}
