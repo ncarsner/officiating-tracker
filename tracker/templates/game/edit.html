@@ -5,8 +5,8 @@
 {% block content %}
 
     <form method="POST">
-        {% csrf_token %}
         {{ form.as_p }}
+        {% csrf_token %}
         <button type="submit">Save Changes</button>
     </form>
 
