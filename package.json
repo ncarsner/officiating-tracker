@@ -4,7 +4,9 @@
   "description": "Application design to track income and travel expenses related to seasonal officiating.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tailwindcss -i project/static/css/input.css -o project/static/css/output.css --minify",
+    "dev": "tailwindcss -i project/static/css/input.css -o project/static/css/output.css --watch"
   },
   "repository": {
     "type": "git",
@@ -20,5 +22,9 @@
   "homepage": "https://github.com/ncarsner/officiating-tracker#readme",
   "devDependencies": {
     "tailwindcss": "^3.4.17"
+  },
+  "dependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6"
   }
 }
