@@ -14,6 +14,7 @@ Including another URLconf
 """
 
 from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import include, path
 
 from tracker import views
@@ -25,6 +26,8 @@ urlpatterns = [
     path("edit_game/<int:pk>/", views.edit_game, name="edit_game"),
     path("delete_game/<int:pk>/", views.delete_game, name="delete_game"),
 ]
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:
     import debug_toolbar
