@@ -23,7 +23,7 @@
         <th class="px-4 py-2 text-left">League</th>
         <th class="px-4 py-2 text-left">Position</th>
         <th class="px-4 py-2 text-left">Fee Paid</th>
-        <th class="px-4 py-2 text-left">Volunteer</th>
+        <!-- <th class="px-4 py-2 text-left">Volunteer</th> -->
         <th class="px-4 py-2 text-left">Mileage</th>
         <th class="px-4 py-2 text-left">Mileage Paid</th>
         <th class="px-4 py-2 text-left">Actions</th>
@@ -36,11 +36,35 @@
         <td class="px-4 py-2">{{ game.site.name }}</td>
         <td class="px-4 py-2">{{ game.league.organization }}</td>
         <td class="px-4 py-2">{{ game.position }}</td>
-        <td class="px-4 py-2">{{ game.fee_paid }}</td>
-        <td class="px-4 py-2">{{ game.is_volunteer }}</td>
-        <td class="px-4 py-2">{{ game.mileage }}</td>
-        <td class="px-4 py-2">{{ game.mileage_paid }}</td>
+        <!-- <td class="px-4 py-2">{{ game.fee_paid }}</td> -->
+        <td class="px-4 py-2">
+          {% if game.fee_paid %}
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-black-400 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          {% else %}
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;"></svg>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          {% endif %}
+        </td>
+        <!-- <td class="px-4 py-2">{{ game.is_volunteer }}</td> -->
+        <!-- <td class="px-4 py-2">{{ game.mileage }}</td> -->
+        <td class="px-4 py-2">{% if game.mileage > 0 %}{{ game.mileage }}{% endif %}</td>
+        <!-- <td class="px-4 py-2">{{ game.mileage_paid }}</td> -->
+        <td class="px-4 py-2">
+          {% if game.mileage_paid %}
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-black-400 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          {% else %}
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;"></svg>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          {% endif %}
+        </td>
         <td class="px-4 py-2 space-x-2">
+
           <form method="get" action="{% url 'edit_game' game.id %}" class="inline">
             {% csrf_token %}
             <button type="submit" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition">
