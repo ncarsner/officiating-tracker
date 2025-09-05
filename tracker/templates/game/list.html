@@ -37,7 +37,19 @@
       {% endif %}
     </td>
     <td>{% if game.mileage != 0.0 %}{{ game.mileage }}{% endif %}</td>
-    <td><input type="checkbox" disabled {% if game.mileage_paid %}checked{% endif %}></td>
+    <!-- <td><input type="checkbox" disabled {% if game.mileage_paid %}checked{% endif %}></td> -->
+    <td class="text-center">
+      {% if game.mileage_paid %}
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-black-400 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+      {% else %}
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;"></svg>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+      {% endif %}
+    </td>
+
     <td>
 
       <form method="get" action="{% url 'edit_game' game.id %}" style="display:inline;">
