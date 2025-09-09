@@ -1,7 +1,5 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-
-# from django.db import transaction
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -9,7 +7,6 @@ from tracker.forms import GameForm, ProfileForm, UserForm
 from tracker.models import Game
 
 
-# @transaction.atomic
 @login_required
 def update_profile(request):
     if request.method == "POST":
