@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -9,7 +8,6 @@ from tracker.models import Game
 
 
 @login_required
-@transaction.atomic
 def update_profile(request):
     if request.method == "POST":
         user_form = UserForm(request.POST, instance=request.user)
@@ -43,6 +41,7 @@ def game_list(request: HttpRequest) -> HttpResponse:
         form = GameForm(request.POST)
         if form.is_valid():
             form.save()
+            return redirect("game_list")
     games = Game.objects.select_related("league", "site").all()
     context = {"games": games, "title": "Game List", "form": form}
     return render(request, "game/list.html", context)
