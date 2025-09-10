@@ -33,9 +33,9 @@ class Location(models.Model):
 class Game(models.Model):
     date = models.DateField()
     # Many-to-One: many games can be played at a site
-    site = models.ForeignKey("Site", on_delete=models.CASCADE)
+    site = models.ForeignKey("Site", on_delete=models.SET_NULL, null=True)
     # Many-to-One: many games can belong to the same league/organization
-    league = models.ForeignKey("League", on_delete=models.CASCADE)
+    league = models.ForeignKey("League", on_delete=models.SET_NULL, null=True)
     fee_paid = models.BooleanField(default=False)
     is_volunteer = models.BooleanField(default=False)
     mileage = models.FloatField(default=0.0)
@@ -47,7 +47,7 @@ class Game(models.Model):
 
 
 class Site(models.Model):
-    name = models.CharField(max_length=100, blank=False, null=False)
+    name = models.CharField(max_length=100, unique=True, blank=False, null=False)
     address = models.CharField(max_length=255, blank=False, null=False)
 
     def __str__(self):
@@ -55,7 +55,9 @@ class Site(models.Model):
 
 
 class League(models.Model):
-    organization = models.CharField(max_length=100, blank=False, null=False)
+    organization = models.CharField(
+        max_length=100, unique=True, blank=False, null=False
+    )
     assignor = models.CharField(max_length=100, blank=False, null=False)
     game_fee = models.DecimalField(max_digits=6, decimal_places=2, blank=False)
     description = models.TextField(blank=True)
