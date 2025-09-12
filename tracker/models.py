@@ -45,6 +45,9 @@ class Game(models.Model):
     def __str__(self):
         return f"Game on {self.date} at {self.site}"
 
+    class Meta:
+        ordering = ["-date"]
+
 
 class Site(models.Model):
     name = models.CharField(max_length=100, unique=True, blank=False, null=False)

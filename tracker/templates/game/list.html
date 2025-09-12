@@ -47,7 +47,11 @@
           </tr>
           <tr>
         <td class="px-4 py-2 font-medium text-gray-700">Position</td>
-        <td class="px-4 py-2 border border-black rounded">{{ form.position }}</td>
+        <td class="px-4 py-2">
+          <div class="border border-black-800 rounded">
+            {{ form.position }}
+          </div>
+        </td>
           </tr>
           <tr>
         <td class="px-4 py-2 font-medium text-gray-700">Fee Paid</td>
@@ -81,16 +85,16 @@
         <th class="px-4 py-2 text-left">Fee Paid</th>
         <th class="px-4 py-2 text-left">Mileage</th>
         <th class="px-4 py-2 text-left">Mileage Paid</th>
-        <th class="px-4 py-2 text-left">Actions</th>
+        <th class="px-4 py-2 text-left"></th>
       </tr>
     </thead>
     <tbody>
-      {% for game in games %}
+      {% for game in games|dictsort:"date" %}
       <tr class="border-t hover:bg-gray-50">
         <td class="px-4 py-2">{{ game.date }}</td>
         <td class="px-4 py-2">{{ game.site.name }}</td>
         <td class="px-4 py-2">{{ game.league.organization }}</td>
-        <td class="px-4 py-2">{{ game.position }}</td>
+        <td class="px-4 py-2">{% if game.position %}{{ game.position }}{% endif %}</td>
         <td class="px-4 py-2">
           {% if game.fee_paid %}
             {% include 'game/icon-checkmark.html' %}
