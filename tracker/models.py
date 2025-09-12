@@ -46,7 +46,7 @@ class Game(models.Model):
         return f"Game on {self.date} at {self.site}"
 
     class Meta:
-        ordering = ["-date"]
+        ordering = ["date"]
 
 
 class Site(models.Model):

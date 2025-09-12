@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Game List{% endblock %}
+{% block title %} Game List {% endblock %}
 
 {% block content %}
 
@@ -67,6 +67,11 @@
           <label for="id_mileage_paid" class="ml-2 text-sm text-gray-700">Yes</label>
         </td>
           </tr>
+          <tr>
+        <td class="px-4 py-2 font-medium text-gray-700">Mileage</td>
+        <td class="px-4 py-2">{{ form.mileage }}</td>
+          </tr>
+
         </tbody>
       </table>
     </div>
@@ -89,7 +94,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for game in games|dictsort:"date" %}
+      {% for game in games %}
       <tr class="border-t hover:bg-gray-50">
         <td class="px-4 py-2">{{ game.date }}</td>
         <td class="px-4 py-2">{{ game.site.name }}</td>

@@ -25,7 +25,15 @@ class DateInput(forms.DateInput):
 class GameForm(forms.ModelForm):
     class Meta:
         model = Game
-        fields = ["date", "site", "league", "fee_paid", "mileage_paid", "position"]
+        fields = [
+            "date",
+            "site",
+            "league",
+            "fee_paid",
+            "mileage_paid",
+            "mileage",
+            "position",
+        ]
         widgets = {
             "date": DateInput(),
         }
