@@ -2,9 +2,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 
 from tracker.forms import GameForm, ProfileForm, UserForm
-from tracker.models import Game
+from tracker.models import Game, Site
+from tracker.utils import distance_miles, DistanceError
 
 
 @login_required
@@ -36,7 +38,7 @@ def game_list(request: HttpRequest) -> HttpResponse:
         title (str): The title of the page, "Game List".
         form (GameForm): The form instance for adding a new game.
     """
-    form = GameForm()
+    form = GameForm(request=request)
     if request.method == "POST":
         form = GameForm(request.POST)
         if form.is_valid():
@@ -88,3 +90,20 @@ def delete_game(request: HttpRequest, pk: int) -> HttpResponse:
         return redirect("game_list")
     context = {"game": game, "title": "Delete Game"}
     return render(request, "game/delete.html", context)
+
+
+@login_required
+def site_distance(request):
+    site_id = request.GET.get("site")
+    miles = 0
+    if site_id and request.user.profile.location:
+        try:
+            site = Site.objects.get(pk=site_id)
+            miles = distance_miles(request.user.profile.location, site.address)
+        except DistanceError:
+            miles = 0
+
+    form = GameForm()  # empty form just for rendering the field
+    form.fields["mileage"].initial = miles
+    html = render_to_string("game/_mileage_field.html", {"form": form}, request)
+    return HttpResponse(html)
