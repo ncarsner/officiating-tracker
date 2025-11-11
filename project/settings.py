@@ -34,6 +34,7 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default=[], cast=Csv())
 
+MAPS_API_KEY = config("API_KEY")
 
 # Application definition
 

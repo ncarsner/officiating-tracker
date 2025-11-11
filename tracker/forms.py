@@ -3,6 +3,9 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 from tracker.models import Game, League, Profile, Site
+from tracker.utils import distance_miles, DistanceError
+
+# from django.forms import ModelForm, DateInput
 
 
 class UserForm(forms.ModelForm):
@@ -37,32 +40,33 @@ class GameForm(forms.ModelForm):
             "date": DateInput(),
         }
 
-    def __init__(self, *args, request=None, **kwargs):
+    def __init__(self, *args, **kwargs):
+        # Remove user parameter - not needed for now
+        kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        # Make mileage field read-only in the form
+        self.fields['mileage'].widget.attrs['readonly'] = True
+        self.fields['mileage'].help_text = 'Calculated automatically from default location'
 
-        base = (
-            "w-full rounded-xl border border-zinc-300 dark:border-zinc-700 "
-            "bg-white dark:bg-zinc-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        )
-        cb = "h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-
-        self.fields["date"].widget.attrs.update({"class": base})
-        self.fields["site"].widget.attrs.update(
-            {
-                "class": base,
-                "hx-trigger": "change",
-                "hx-target": "#id_mileage",
-                "hx-swap": "outerHTML",
-                "hx-indicator": ".htmx-indicator",
-                **({"hx-get": reverse("site_distance")} if request else {}),
-            }
-        )
-        print(self.fields["site"].widget.attrs)
-        self.fields["league"].widget.attrs.update({"class": base})
-        self.fields["position"].widget.attrs.update({"class": base})
-        self.fields["mileage"].widget.attrs.update({"class": base})
-        self.fields["fee_paid"].widget.attrs.update({"class": cb})
-        self.fields["mileage_paid"].widget.attrs.update({"class": cb})
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Use default Nashville address for testing
+        DEFAULT_ORIGIN = "1409 12th Ave S, Nashville, TN 37203"
+        
+        # Calculate mileage if a site is selected
+        if instance.site:
+            try:
+                destination = instance.site.address
+                instance.mileage = distance_miles(DEFAULT_ORIGIN, destination)
+            except DistanceError:
+                # If API call fails, keep the existing mileage or set to 0
+                if not instance.mileage:
+                    instance.mileage = 0.0
+        
+        if commit:
+            instance.save()
+        return instance
 
 
 class SiteForm(forms.ModelForm):

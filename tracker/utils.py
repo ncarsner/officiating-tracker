@@ -1,5 +1,5 @@
-from django.conf import settings
 import googlemaps
+from django.conf import settings
 
 MI_PER_M = 1 / 1609.344
 
@@ -22,25 +22,3 @@ def distance_miles(origin: str, destination: str) -> float:
     meters = el["distance"]["value"]
     distance = meters * MI_PER_M
     return round(distance, 1)
-
-
-if __name__ == "__main__":
-    print("Amsterdam → Alicante, Spain (both miles and km)")
-    print(distance_miles("Amsterdam", "Alicante, Spain"))
-    print(distance_miles("Amsterdam", "Alicante, Spain", in_miles=False))
-
-    print("\nLouvre, Paris → Grand Place, Brussels (in km)")
-    print(
-        distance_miles(
-            "Rue de Rivoli, 75001 Paris, France",
-            "Grand Place, 1000 Brussels, Belgium",
-            in_miles=False,
-        )
-    )
-
-    print("\nTimes Square, New York → Central Park, New York (in miles)")
-    print(
-        distance_miles(
-            "Times Square, New York, NY", "Central Park, New York, NY", in_miles=True
-        )
-    )
