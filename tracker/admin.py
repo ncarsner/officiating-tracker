@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from .models import Game, Site, League
+from .models import Game, Site, League, Profile
+
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "location")
 
 
 @admin.register(Game)

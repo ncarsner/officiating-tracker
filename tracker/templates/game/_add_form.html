@@ -1,0 +1,44 @@
+{% load static %}
+
+<form method="post" class="max-w-xl mx-auto bg-white dark:bg-zinc-900 shadow p-6 rounded-2xl space-y-5">
+  {% csrf_token %}
+
+  <div class="grid gap-2">
+    <label class="text-sm font-medium text-zinc-700 dark:text-zinc-200">{{ form.date.label }}</label>
+    {{ form.date }}
+  </div>
+
+  <div class="grid gap-2">
+    <label class="text-sm font-medium text-zinc-700 dark:text-zinc-200">{{ form.site.label }}</label>
+    {{ form.site }}
+  </div>
+
+  <div class="grid gap-2">
+    <label class="text-sm font-medium text-zinc-700 dark:text-zinc-200">{{ form.league.label }}</label>
+    {{ form.league }}
+  </div>
+
+  <div class="grid gap-2">
+    <label class="text-sm font-medium text-zinc-700 dark:text-zinc-200">{{ form.position.label }}</label>
+    {{ form.position }}
+  </div>
+
+  <div class="flex items-center gap-3">
+    {{ form.fee_paid }} <label class="text-sm text-zinc-700 dark:text-zinc-200">{{ form.fee_paid.label }}</label>
+  </div>
+
+  <div class="flex items-center gap-3">
+    {{ form.mileage_paid }} <label class="text-sm text-zinc-700 dark:text-zinc-200">{{ form.mileage_paid.label }}</label>
+  </div>
+
+  <div class="grid gap-2">
+    <label class="text-sm font-medium text-zinc-700 dark:text-zinc-200">{{ form.mileage.label }}</label>
+    {{ form.mileage }}  {# HTMX swaps this input by id="id_mileage" #}
+  </div>
+
+  <button type="submit"
+          class="w-full bg-indigo-600 text-white font-medium py-2.5 rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    Add Game
+  </button>
+</form>
+
