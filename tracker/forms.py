@@ -40,7 +40,7 @@ class GameForm(forms.ModelForm):
             "date": DateInput(),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, request=None, **kwargs):
         # Remove user parameter - not needed for now
         kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
