@@ -34,6 +34,7 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default=[], cast=Csv())
 
+MAPS_API_KEY = config("API_KEY")
 
 # Application definition
 
@@ -144,4 +145,3 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-MAPS_API_KEY = config("MAPS_API_KEY")
