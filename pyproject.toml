@@ -11,10 +11,21 @@ dependencies = [
     "python-decouple>=3.8",
     "python-dotenv>=1.1.1",
     "googlemaps>=4.0.0,<5.0.0",
+    "django-allauth>=65.13.0",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.0",
     "pytest-cov>=7.0.0",
+]
+
+[tool.pytest.ini_options]
+python_files = ["test_*.py", "*_test.py", "tests.py"]
+
+[tool.coverage.run]
+omit = [
+    "tracker/tests.py",
+    "tracker/__init__.py",
+    "tracker/migrations/*",
 ]
