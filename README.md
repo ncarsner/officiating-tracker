@@ -184,7 +184,7 @@ uv run pytest --cov=tracker
 
 ## API Integration
 
-The application uses Google Maps Distance Matrix API to automatically calculate driving distance between the user's home location and game sites. 
+The application uses Google Maps Distance Matrix API to automatically calculate driving distance between the user's home location and game sites.
 
 **Default origin** (for testing): `123 Main St, Nashville, TN`
 

@@ -2,11 +2,10 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
+import pytest
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
-
-import pytest
 
 from tracker.forms import GameForm, LeagueForm, SiteForm
 from tracker.models import Game, League, Location, Profile, Site
