@@ -15,7 +15,7 @@ A Django web application designed to track income, travel expenses, and mileage 
 
 - **Backend**: Django 5.2.4
 - **Database**: SQLite (configurable via DATABASE_URL)
-- **Frontend**: Tailwind CSS 4.x
+- **Frontend**: Tailwind CSS 3.x
 - **API Integration**: Google Maps Distance Matrix API
 - **Environment Management**: uv (Python package manager)
 - **Testing**: pytest with Django integration
