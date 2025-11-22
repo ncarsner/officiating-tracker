@@ -6,7 +6,7 @@ from django.template.loader import render_to_string
 
 from tracker.forms import GameForm, ProfileForm, UserForm
 from tracker.models import Game, Site
-from tracker.utils import distance_miles, DistanceError
+from tracker.utils import DistanceError, distance_miles
 
 
 @login_required

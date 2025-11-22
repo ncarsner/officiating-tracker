@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Game, Site, League, Profile
+from .models import Game, League, Profile, Site
 
 
 @admin.register(Profile)
