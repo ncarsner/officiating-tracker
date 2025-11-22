@@ -20,13 +20,3 @@ dev = [
     "pytest-cov>=7.0.0",
     "pre-commit>=4.0.0",
 ]
-
-[tool.pytest.ini_options]
-python_files = ["test_*.py", "*_test.py", "tests.py"]
-
-[tool.coverage.run]
-omit = [
-    "tracker/tests.py",
-    "tracker/__init__.py",
-    "tracker/migrations/*",
-]

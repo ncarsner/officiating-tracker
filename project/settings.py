@@ -27,6 +27,10 @@ DEFAULT_ADDRESS = config(
     "DEFAULT_ADDRESS", default="1409 12th Ave S, Nashville, TN 37203"
 )
 
+DEFAULT_ADDRESS = config("DEFAULT_ADDRESS", default="123 Main St, Nashville TN 37203")
+
+DEFAULT_ADDRESS = config("DEFAULT_ADDRESS", default="123 Main St, Nashville TN 37203")
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -151,13 +155,5 @@ ACCOUNT_EMAIL_VERIFICATION = (
 )
 ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_EMAIL_REQUIRED = False
-
-# Session configuration
-# SESSION_ENGINE = "django.contrib.sessions.backends.db"
-# SESSION_COOKIE_AGE = 1209600  # 2 weeks
-# SESSION_SAVE_EVERY_REQUEST = False
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

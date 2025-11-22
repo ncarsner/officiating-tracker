@@ -94,12 +94,6 @@ uv run python manage.py migrate
 uv run python manage.py createsuperuser
 ```
 
-### 8. Collect Static Files
-
-```bash
-uv run python manage.py collectstatic --noinput
-```
-
 ## Running the Application
 
 ### Start the Development Server
@@ -186,7 +180,7 @@ uv run pytest --cov=tracker
 
 The application uses Google Maps Distance Matrix API to automatically calculate driving distance between the user's home location and game sites.
 
-**Default origin** (for testing): `123 Main St, Nashville, TN`
+**Default origin** (for testing): `123 Main St, Nashville, TN 37203`
 
 When user authentication is fully implemented, each user's profile location will be used as the origin.
 
@@ -202,7 +196,7 @@ When user authentication is fully implemented, each user's profile location will
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/<feature-name>`)
-3. Commit your changes (`git commit -m 'New <feature-name>'`)
+3. Commit your changes
 4. Push to the branch (`git push origin feature/<feature-name>`)
 5. Open a Pull Request
 
