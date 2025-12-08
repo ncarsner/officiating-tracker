@@ -1,7 +1,7 @@
 [project]
 name = "officiating-tracker"
 version = "0.1.0"
-description = "Add your description here"
+description = "Web application for tracking seasonal officiating revenue and mileage"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

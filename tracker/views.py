@@ -9,6 +9,11 @@ from tracker.models import Game, Site
 from tracker.utils import DistanceError, distance_miles
 
 
+def home(request):
+    """Landing page view."""
+    return render(request, "home.html")
+
+
 @login_required
 def update_profile(request):
     if request.method == "POST":
@@ -31,6 +36,7 @@ def update_profile(request):
     )
 
 
+@login_required
 def game_list(request: HttpRequest) -> HttpResponse:
     """
     Context:
@@ -49,11 +55,13 @@ def game_list(request: HttpRequest) -> HttpResponse:
     return render(request, "game/list.html", context)
 
 
+@login_required
 def game_detail(request: HttpRequest, pk: int) -> HttpResponse:
     game = get_object_or_404(Game, pk=pk)
     return render(request, "game/detail.html", {"game": game})
 
 
+@login_required
 def game_create(request: HttpRequest) -> HttpResponse:
     form = GameForm()
     if request.method == "POST":
@@ -65,6 +73,7 @@ def game_create(request: HttpRequest) -> HttpResponse:
     return render(request, "game/add.html", context)
 
 
+@login_required
 def edit_game(request: HttpRequest, pk: int) -> HttpResponse:
     game = get_object_or_404(Game, pk=pk)
     if request.method == "POST":
@@ -78,6 +87,7 @@ def edit_game(request: HttpRequest, pk: int) -> HttpResponse:
     return render(request, "game/edit.html", context)
 
 
+@login_required
 def delete_game(request: HttpRequest, pk: int) -> HttpResponse:
     """
     Context:

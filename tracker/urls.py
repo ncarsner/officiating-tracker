@@ -20,7 +20,8 @@ from django.urls import include, path
 from tracker import views
 
 urlpatterns = [
-    path("", views.game_list, name="game_list"),
+    path("", views.home, name="home"),
+    path("games/", views.game_list, name="game_list"),
     path("game/<int:pk>/", views.game_detail, name="game_detail"),
     path("add_game/", views.game_create, name="add_game"),
     path("edit_game/<int:pk>/", views.edit_game, name="edit_game"),

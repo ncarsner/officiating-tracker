@@ -148,12 +148,14 @@ AUTHENTICATION_BACKENDS = [
 
 # django-allauth configuration
 SITE_ID = 1
+LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
-ACCOUNT_LOGOUT_REDIRECT_URL = "/accounts/login/"
+ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 ACCOUNT_EMAIL_VERIFICATION = (
     "none"  # Change to 'mandatory' or 'optional' if you want email verification
 )
 ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_SIGNUP_REDIRECT_URL = "/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
