@@ -17,6 +17,92 @@ body {
     background-color: #f9f9f9;
 }
 
+/* Dark mode base styles */
+.dark body {
+    color: #e5e7eb;
+    background-color: #111827;
+}
+
+@layer base {
+    /* Default text colors that adapt to dark mode */
+    h1, h2, h3, h4, h5, h6 {
+        @apply text-gray-900 dark:text-gray-100;
+    }
+
+    p {
+        @apply text-gray-700 dark:text-gray-300;
+    }
+
+    label {
+        @apply text-gray-700 dark:text-gray-300;
+    }
+
+    /* Links - blue in both modes */
+    a {
+        @apply text-blue-600 dark:text-blue-400;
+    }
+
+    /* Table styling with dark mode */
+    table {
+        @apply bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700;
+    }
+
+    thead {
+        @apply bg-gray-100 dark:bg-gray-700;
+    }
+
+    tbody tr {
+        @apply border-gray-200 dark:border-gray-700;
+    }
+
+    th {
+        @apply text-gray-900 dark:text-gray-100;
+    }
+
+    td {
+        @apply text-gray-900 dark:text-gray-100;
+    }
+
+    tbody tr:hover {
+        @apply bg-gray-50 dark:bg-gray-700;
+    }
+}
+
+@layer components {
+    /* Form containers and cards - common pattern */
+    .bg-white {
+        @apply dark:bg-gray-800;
+    }
+
+    /* Borders */
+    .border-gray-200 {
+        @apply dark:border-gray-700;
+    }
+
+    /* Common text color patterns */
+    .text-gray-700:not(.hover\:text-gray-700):not([class*="dark:"]) {
+        @apply dark:text-gray-300;
+    }
+
+    .text-gray-600 {
+        @apply dark:text-gray-400;
+    }
+
+    .text-gray-900 {
+        @apply dark:text-gray-100;
+    }
+
+    /* Hover backgrounds */
+    .hover\:bg-gray-50:hover {
+        @apply dark:hover:bg-gray-700;
+    }
+
+    /* Gray backgrounds */
+    .bg-gray-100 {
+        @apply dark:bg-gray-700;
+    }
+}
+
 a {
     text-decoration: none;
     color: inherit;
@@ -43,7 +129,7 @@ button {
     margin: 0 auto;
 }
 
-/* Form input styling */
+/* Form input styling with dark mode */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -57,6 +143,7 @@ textarea {
     border-radius: 0.25rem;
     font-size: 1rem;
     line-height: 1.25;
+    @apply bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600;
 }
 
 textarea {
@@ -74,4 +161,5 @@ textarea:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 0;
     border-color: #3b82f6;
+    @apply dark:outline-blue-400 dark:border-blue-400;
 }

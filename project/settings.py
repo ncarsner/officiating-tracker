@@ -23,13 +23,8 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default=[], cast=Csv())
 
 MAPS_API_KEY = config("API_KEY")
-DEFAULT_ADDRESS = config(
-    "DEFAULT_ADDRESS", default="1409 12th Ave S, Nashville, TN 37203"
-)
 
-DEFAULT_ADDRESS = config("DEFAULT_ADDRESS", default="123 Main St, Nashville TN 37203")
-
-DEFAULT_ADDRESS = config("DEFAULT_ADDRESS", default="123 Main St, Nashville TN 37203")
+DEFAULT_ADDRESS = config("DEFAULT_ADDRESS")
 
 # Application definition
 
