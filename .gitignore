@@ -1,6 +1,8 @@
 node_modules/
 .vscode/
-.HOWTO*
+.*.md
+**/_*.html
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
