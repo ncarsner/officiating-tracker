@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-3xl font-bold">My Profile</h2>
+    <a href="{% url 'profile_edit' %}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+      Edit Profile
+    </a>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+    <div class="flex items-start gap-6 mb-6">
+      <!-- Profile Picture -->
+      <div class="flex-shrink-0">
+        {% if profile.profile_picture %}
+          <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700">
+        {% else %}
+          <div class="w-32 h-32 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center border-4 border-gray-200 dark:border-gray-700">
+            <svg class="w-16 h-16 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Profile Details -->
+      <div class="flex-grow">
+        <h3 class="text-2xl font-semibold mb-2">{{ profile.display_name }}</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">@{{ user.username }}</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Email -->
+          <div>
+            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Email</h4>
+            <p class="text-gray-900 dark:text-gray-100">{{ user.email|default:"Not provided" }}</p>
+          </div>
+
+          <!-- Full Name -->
+          {% if profile.first_name or profile.last_name %}
+          <div>
+            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Full Name</h4>
+            <p class="text-gray-900 dark:text-gray-100">{{ profile.first_name }} {{ profile.last_name }}</p>
+          </div>
+          {% endif %}
+
+          <!-- Home Address -->
+          {% if profile.full_address %}
+          <div class="md:col-span-2">
+            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Home Address</h4>
+            <p class="text-gray-900 dark:text-gray-100">{{ profile.full_address }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Used for automatic mileage calculation
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Information -->
+    <div class="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+      <h3 class="text-xl font-semibold mb-4">Account Information</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Member Since</h4>
+          <p class="text-gray-900 dark:text-gray-100">{{ user.date_joined|date:"F Y" }}</p>
+        </div>
+        <div>
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Login</h4>
+          <p class="text-gray-900 dark:text-gray-100">{{ user.last_login|date:"M d, Y" }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+      <h3 class="text-xl font-semibold mb-4">Quick Actions</h3>
+      <div class="flex flex-wrap gap-3">
+        <a href="{% url 'account_change_password' %}" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+          Change Password
+        </a>
+        <a href="{% url 'game_list' %}" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+          View My Games
+        </a>
+        <a href="{% url 'add_game' %}" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+          Add New Game
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

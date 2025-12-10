@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-3xl font-bold">Edit Profile</h2>
+    <a href="{% url 'profile_view' %}" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition">
+      Cancel
+    </a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-6">
+    {% csrf_token %}
+
+    <!-- Account Information -->
+    <div>
+      <h3 class="text-xl font-semibold mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Account Information</h3>
+
+      <!-- Username (readonly) -->
+      <div class="mb-4">
+        <label for="{{ user_form.username.id_for_label }}" class="block font-medium mb-2">Username</label>
+        {{ user_form.username }}
+        {% if user_form.username.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ user_form.username.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Email -->
+      <div class="mb-4">
+        <label for="{{ user_form.email.id_for_label }}" class="block font-medium mb-2">Email</label>
+        {{ user_form.email }}
+        {% if user_form.email.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ user_form.email.errors.0 }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Personal Information -->
+    <div>
+      <h3 class="text-xl font-semibold mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Personal Information</h3>
+
+      <!-- First Name -->
+      <div class="mb-4">
+        <label for="{{ profile_form.first_name.id_for_label }}" class="block font-medium mb-2">First Name</label>
+        {{ profile_form.first_name }}
+        {% if profile_form.first_name.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ profile_form.first_name.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Last Name -->
+      <div class="mb-4">
+        <label for="{{ profile_form.last_name.id_for_label }}" class="block font-medium mb-2">Last Name</label>
+        {{ profile_form.last_name }}
+        {% if profile_form.last_name.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ profile_form.last_name.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Profile Picture -->
+      <div class="mb-4">
+        <label for="{{ profile_form.profile_picture.id_for_label }}" class="block font-medium mb-2">Profile Picture</label>
+        {% if profile_form.instance.profile_picture %}
+          <div class="mb-2">
+            <img src="{{ profile_form.instance.profile_picture.url }}" alt="Current Profile" class="w-24 h-24 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Current picture</p>
+          </div>
+        {% endif %}
+        {{ profile_form.profile_picture }}
+        {% if profile_form.profile_picture.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ profile_form.profile_picture.errors.0 }}</p>
+        {% endif %}
+        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Upload a new picture (JPG, PNG, max 5MB)</p>
+      </div>
+    </div>
+
+    <!-- Address Information -->
+    <div>
+      <h3 class="text-xl font-semibold mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Home Address</h3>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Your home address is used to automatically calculate mileage for games you enter.
+      </p>
+
+      <!-- Street Address -->
+      <div class="mb-4">
+        <label for="{{ profile_form.home_address.id_for_label }}" class="block font-medium mb-2">Street Address</label>
+        {{ profile_form.home_address }}
+        {% if profile_form.home_address.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ profile_form.home_address.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- City, State, ZIP -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- City -->
+        <div class="md:col-span-2">
+          <label for="{{ profile_form.city.id_for_label }}" class="block font-medium mb-2">City</label>
+          {{ profile_form.city }}
+          {% if profile_form.city.errors %}
+            <p class="text-red-600 text-sm mt-1">{{ profile_form.city.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- State -->
+        <div>
+          <label for="{{ profile_form.state.id_for_label }}" class="block font-medium mb-2">State</label>
+          {{ profile_form.state }}
+          {% if profile_form.state.errors %}
+            <p class="text-red-600 text-sm mt-1">{{ profile_form.state.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ZIP Code -->
+      <div class="mt-4">
+        <label for="{{ profile_form.zip_code.id_for_label }}" class="block font-medium mb-2">ZIP Code</label>
+        {{ profile_form.zip_code }}
+        {% if profile_form.zip_code.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ profile_form.zip_code.errors.0 }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="flex justify-end gap-3 pt-4">
+      <a href="{% url 'profile_view' %}" class="px-8 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition">
+        Cancel
+      </a>
+      <button type="submit" class="px-8 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+        Save Changes
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
