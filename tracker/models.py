@@ -6,7 +6,42 @@ from django.dispatch import receiver
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    # Personal Information
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+    profile_picture = models.ImageField(
+        upload_to="profile_pictures/", blank=True, null=True
+    )
+
+    # Address Information
+    home_address = models.CharField(
+        max_length=255, blank=True, help_text="Street address for mileage calculation"
+    )
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=50, blank=True)
+    zip_code = models.CharField(max_length=10, blank=True)
+
+    # Legacy field - kept for backwards compatibility
     location = models.CharField(max_length=100, blank=True)
+
+    def __str__(self):
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.user.username
+
+    @property
+    def full_address(self):
+        """Returns the complete address for mileage calculations"""
+        parts = [self.home_address, self.city, self.state, self.zip_code]
+        return ", ".join(filter(None, parts)) or self.location
+
+    @property
+    def display_name(self):
+        """Returns the full name or username"""
+        if self.first_name or self.last_name:
+            return f"{self.first_name} {self.last_name}".strip()
+        return self.user.username
 
 
 @receiver(post_save, sender=User)
