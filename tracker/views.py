@@ -15,23 +15,35 @@ def home(request):
 
 
 @login_required
-def update_profile(request):
+def profile_view(request):
+    """View user profile details."""
+    return render(request, "profile/view.html", {"profile": request.user.profile})
+
+
+@login_required
+def profile_edit(request):
+    """Edit user profile."""
     if request.method == "POST":
         user_form = UserForm(request.POST, instance=request.user)
-        profile_form = ProfileForm(request.POST, instance=request.user.profile)
+        profile_form = ProfileForm(
+            request.POST,
+            request.FILES,  # Include FILES for image upload
+            instance=request.user.profile,
+        )
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
-            messages.success(request, ("Your profile was successfully updated!"))
-            return redirect("settings:profile")
+            messages.success(request, "Your profile was successfully updated!")
+            return redirect("profile_view")
         else:
-            messages.error(request, ("Please correct the error below."))
+            messages.error(request, "Please correct the errors below.")
     else:
         user_form = UserForm(instance=request.user)
         profile_form = ProfileForm(instance=request.user.profile)
+
     return render(
         request,
-        "profiles/profile.html",
+        "profile/edit.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
 
@@ -44,9 +56,9 @@ def game_list(request: HttpRequest) -> HttpResponse:
         title (str): The title of the page, "Game List".
         form (GameForm): The form instance for adding a new game.
     """
-    form = GameForm(request=request)
+    form = GameForm(user=request.user)
     if request.method == "POST":
-        form = GameForm(request.POST)
+        form = GameForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
             return redirect("game_list")
@@ -63,9 +75,9 @@ def game_detail(request: HttpRequest, pk: int) -> HttpResponse:
 
 @login_required
 def game_create(request: HttpRequest) -> HttpResponse:
-    form = GameForm()
+    form = GameForm(user=request.user)
     if request.method == "POST":
-        form = GameForm(request.POST)
+        form = GameForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
             return redirect("game_list")
@@ -77,12 +89,12 @@ def game_create(request: HttpRequest) -> HttpResponse:
 def edit_game(request: HttpRequest, pk: int) -> HttpResponse:
     game = get_object_or_404(Game, pk=pk)
     if request.method == "POST":
-        form = GameForm(request.POST, instance=game)
+        form = GameForm(request.POST, instance=game, user=request.user)
         if form.is_valid():
             form.save()
             return redirect("game_list")
     else:
-        form = GameForm(instance=game)
+        form = GameForm(instance=game, user=request.user)
     context = {"form": form, "title": "Edit Game"}
     return render(request, "game/edit.html", context)
 

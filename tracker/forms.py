@@ -11,13 +11,55 @@ from tracker.utils import DistanceError, distance_miles
 class UserForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ("first_name", "last_name", "email")
+        fields = ("username", "email")
+        widgets = {
+            "username": forms.TextInput(attrs={"readonly": "readonly"}),
+        }
 
 
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ("user", "location")
+        fields = (
+            "first_name",
+            "last_name",
+            "profile_picture",
+            "home_address",
+            "city",
+            "state",
+            "zip_code",
+        )
+        widgets = {
+            "home_address": forms.TextInput(
+                attrs={
+                    "placeholder": "123 Main St",
+                }
+            ),
+            "city": forms.TextInput(
+                attrs={
+                    "placeholder": "City",
+                }
+            ),
+            "state": forms.TextInput(
+                attrs={
+                    "placeholder": "State",
+                }
+            ),
+            "zip_code": forms.TextInput(
+                attrs={
+                    "placeholder": "12345",
+                }
+            ),
+        }
+        labels = {
+            "first_name": "First Name",
+            "last_name": "Last Name",
+            "profile_picture": "Profile Picture",
+            "home_address": "Home Address",
+            "city": "City",
+            "state": "State",
+            "zip_code": "ZIP Code",
+        }
 
 
 class DateInput(forms.DateInput):
@@ -40,9 +82,8 @@ class GameForm(forms.ModelForm):
             "date": DateInput(),
         }
 
-    def __init__(self, *args, request=None, **kwargs):
-        # Remove user parameter - not needed for now
-        kwargs.pop("user", None)
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
         super().__init__(*args, **kwargs)
 
         # If creating a new game, hide mileage field
@@ -70,7 +111,15 @@ class GameForm(forms.ModelForm):
         if should_calculate and instance.site:
             try:
                 destination = instance.site.address
-                instance.mileage = distance_miles(settings.DEFAULT_ADDRESS, destination)
+
+                # Get origin address from user profile or settings default
+                origin = settings.DEFAULT_ADDRESS
+                if self.user and hasattr(self.user, "profile"):
+                    profile_address = self.user.profile.full_address
+                    if profile_address:
+                        origin = profile_address
+
+                instance.mileage = distance_miles(origin, destination)
             except DistanceError:
                 # If API call fails, set mileage to 0
                 instance.mileage = 0.0

@@ -69,6 +69,20 @@ body {
 }
 
 @layer components {
+    /* App logo styling */
+    .app-logo {
+        height: 4rem;
+        width: auto;
+    }
+
+    /* Checkmark icon styling */
+    .icon-checkmark {
+        width: 1em;
+        height: 1em;
+        vertical-align: middle;
+    }
+
+
     /* Form containers and cards - common pattern */
     .bg-white {
         @apply dark:bg-gray-800;

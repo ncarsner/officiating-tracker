@@ -21,6 +21,8 @@ from tracker import views
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("profile/", views.profile_view, name="profile_view"),
+    path("profile/edit/", views.profile_edit, name="profile_edit"),
     path("games/", views.game_list, name="game_list"),
     path("game/<int:pk>/", views.game_detail, name="game_detail"),
     path("add_game/", views.game_create, name="add_game"),
@@ -30,6 +32,7 @@ urlpatterns = [
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     import debug_toolbar
