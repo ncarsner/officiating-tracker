@@ -490,6 +490,13 @@ class GameViewsTest(TestCase):
         self.game.refresh_from_db()
         self.assertTrue(self.game.fee_paid)
 
+    def test_delete_game_view_get(self):
+        """Test delete game view GET request shows confirmation."""
+        response = self.client.get(reverse("delete_game", args=[self.game.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("game", response.context)
+        self.assertEqual(response.context["game"], self.game)
+
     def test_delete_game_view_post(self):
         """Test delete game view POST request."""
         response = self.client.post(reverse("delete_game", args=[self.game.pk]))
@@ -658,3 +665,80 @@ class ProfileFormTest(TestCase):
         form = UserForm(data=form_data, instance=self.user)
         self.assertFalse(form.is_valid())
         self.assertIn("email", form.errors)
+
+
+class HomeViewTest(TestCase):
+    """Tests for home view."""
+
+    def test_home_view(self):
+        """Test home view GET request."""
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "home.html")
+
+
+class ProfileEditErrorHandlingTest(TestCase):
+    """Tests for profile edit error handling."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="testuser", email="test@example.com", password="testpass123"
+        )
+        self.client.login(username="testuser", password="testpass123")
+
+    def test_profile_edit_invalid_form_shows_error(self):
+        """Test profile edit view shows error message with invalid data."""
+        data = {
+            "username": "testuser",
+            "email": "invalid-email-format",  # Invalid email
+            "first_name": "John",
+            "last_name": "Doe",
+            "home_address": "",
+            "city": "",
+            "state": "",
+            "zip_code": "",
+        }
+        response = self.client.post(reverse("profile_edit"), data)
+        self.assertEqual(response.status_code, 200)  # Should re-render form
+        messages_list = list(response.context["messages"])
+        self.assertTrue(any("error" in str(m).lower() for m in messages_list))
+
+
+class GameListPostTest(TestCase):
+    """Tests for game list POST handling."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="testuser", password="testpass123"
+        )
+        self.client.login(username="testuser", password="testpass123")
+        self.site = Site.objects.create(
+            name="Test Site", address="123 Test St, Nashville, TN"
+        )
+        self.league = League.objects.create(
+            organization="Test League",
+            assignor="Test Assignor",
+            game_fee=Decimal("50.00"),
+        )
+
+    @patch("tracker.forms.distance_miles")
+    def test_game_list_post_creates_game(self, mock_distance):
+        """Test posting to game list creates a game."""
+        mock_distance.return_value = 10.0
+
+        data = {
+            "date": "2025-12-15",
+            "site": self.site.id,
+            "league": self.league.id,
+            "fee_paid": False,
+            "mileage_paid": False,
+            "mileage": 0.0,
+            "position": "Referee",
+        }
+        response = self.client.post(reverse("game_list"), data)
+        self.assertEqual(response.status_code, 302)  # Redirect
+        self.assertEqual(Game.objects.count(), 1)
