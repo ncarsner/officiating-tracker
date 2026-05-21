@@ -6,7 +6,70 @@
 
   <h2 class="text-2xl font-bold mb-4">Game List</h2>
 
-  {% include 'game/add_form.html' %}
+  <div class="flex flex-row gap-6 mb-6 items-stretch w-full">
+    <div class="shrink-0">
+      {% include 'game/add_form.html' %}
+    </div>
+
+    <div class="flex-1 bg-white dark:bg-gray-800 rounded shadow p-4 flex flex-row gap-6">
+
+    <form method="get" action="{% url 'game_list' %}" class="flex flex-col justify-between" style="min-width:160px;">
+      {% with sel_cls="w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200" %}
+      <select name="filter_year" onchange="this.form.submit()" class="{{ sel_cls }}">
+        <option value="">All Years</option>
+        {% for year in available_years %}
+          <option value="{{ year }}" {% if f_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+        {% endfor %}
+      </select>
+      <select name="filter_league" onchange="this.form.submit()" class="{{ sel_cls }}">
+        <option value="">All Leagues</option>
+        {% for league in available_leagues %}
+          <option value="{{ league }}" {% if f_league == league %}selected{% endif %}>{{ league }}</option>
+        {% endfor %}
+      </select>
+      <select name="filter_assignor" onchange="this.form.submit()" class="{{ sel_cls }}">
+        <option value="">All Assignors</option>
+        {% for assignor in available_assignors %}
+          <option value="{{ assignor }}" {% if f_assignor == assignor %}selected{% endif %}>{{ assignor }}</option>
+        {% endfor %}
+      </select>
+      <select name="filter_position" onchange="this.form.submit()" class="{{ sel_cls }}">
+        <option value="">All Positions</option>
+        {% for position in available_positions %}
+          <option value="{{ position }}" {% if f_position == position %}selected{% endif %}>{{ position }}</option>
+        {% endfor %}
+      </select>
+      <select name="filter_site" onchange="this.form.submit()" class="{{ sel_cls }}">
+        <option value="">All Sites</option>
+        {% for site in available_sites %}
+          <option value="{{ site }}" {% if f_site == site %}selected{% endif %}>{{ site }}</option>
+        {% endfor %}
+      </select>
+      <a href="{% url 'game_list' %}" class="w-full text-center text-sm px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition">Clear Filters</a>
+      {% endwith %}
+    </form>
+
+    <div class="flex-1 grid grid-cols-2 gap-4 content-center">
+      <div class="text-center">
+        <div class="text-xs text-gray-500 dark:text-gray-400">Games</div>
+        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ summary.count|default:"0" }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-xs text-gray-500 dark:text-gray-400">Total Fees</div>
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400">${{ summary.total_fees|default:"0"|floatformat:0 }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-xs text-gray-500 dark:text-gray-400">Unpaid</div>
+        <div class="text-2xl font-bold text-red-600 dark:text-red-400">${{ summary.unpaid_fees|default:"0"|floatformat:0 }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-xs text-gray-500 dark:text-gray-400">Miles</div>
+        <div class="text-2xl font-bold text-gray-700 dark:text-gray-300">{{ summary.total_mileage|default:"0.0"|floatformat:1 }}</div>
+      </div>
+    </div>
+
+  </div>
+  </div>
 
   <table class="min-w-full mt-6 border border-gray-200 bg-white rounded shadow">
     <thead class="bg-gray-100">
