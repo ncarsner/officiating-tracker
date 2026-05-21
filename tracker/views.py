@@ -62,14 +62,14 @@ def game_list(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             form.save()
             return redirect("game_list")
-    games = Game.objects.select_related("league", "site").all()
+    games = Game.objects.select_related("league", "site").filter(user=request.user)
     context = {"games": games, "title": "Game List", "form": form}
     return render(request, "game/list.html", context)
 
 
 @login_required
 def game_detail(request: HttpRequest, pk: int) -> HttpResponse:
-    game = get_object_or_404(Game, pk=pk)
+    game = get_object_or_404(Game, pk=pk, user=request.user)
     return render(request, "game/detail.html", {"game": game})
 
 
@@ -87,7 +87,7 @@ def game_create(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def edit_game(request: HttpRequest, pk: int) -> HttpResponse:
-    game = get_object_or_404(Game, pk=pk)
+    game = get_object_or_404(Game, pk=pk, user=request.user)
     if request.method == "POST":
         form = GameForm(request.POST, instance=game, user=request.user)
         if form.is_valid():
@@ -106,7 +106,7 @@ def delete_game(request: HttpRequest, pk: int) -> HttpResponse:
         game (Game): The game object to be deleted.
         title (str): The title for the confirmation page.
     """
-    game = get_object_or_404(Game, pk=pk)
+    game = get_object_or_404(Game, pk=pk, user=request.user)
     if request.method == "POST":
         game.delete()
         return redirect("game_list")

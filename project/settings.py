@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -53,7 +54,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
-if DEBUG:
+if DEBUG and "test" not in sys.argv:
     INSTALLED_APPS += ["debug_toolbar"]
     MIDDLEWARE = ["debug_toolbar.middleware.DebugToolbarMiddleware"] + MIDDLEWARE
 

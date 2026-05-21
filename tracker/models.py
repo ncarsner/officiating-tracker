@@ -66,6 +66,7 @@ class Location(models.Model):
 
 
 class Game(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     date = models.DateField()
     # Many-to-One: many games can be played at a site
     site = models.ForeignKey("Site", on_delete=models.SET_NULL, null=True)

@@ -127,6 +127,9 @@ class GameForm(forms.ModelForm):
             # No site selected, set mileage to 0
             instance.mileage = 0.0
 
+        if self.user:
+            instance.user = self.user
+
         if commit:
             instance.save()
         return instance

@@ -151,6 +151,9 @@ class GameModelTest(TestCase):
 
     def setUp(self):
         """Set up test data."""
+        self.user = User.objects.create_user(
+            username="gametest", password="testpass123"
+        )
         self.site = Site.objects.create(
             name="Test Site", address="789 Game St, Nashville, TN"
         )
@@ -163,6 +166,7 @@ class GameModelTest(TestCase):
     def test_game_creation(self):
         """Test creating a game."""
         game = Game.objects.create(
+            user=self.user,
             date=date(2025, 11, 15),
             site=self.site,
             league=self.league,
@@ -177,13 +181,13 @@ class GameModelTest(TestCase):
     def test_game_ordering(self):
         """Test that games are ordered by date."""
         game1 = Game.objects.create(
-            date=date(2025, 11, 20), site=self.site, league=self.league
+            user=self.user, date=date(2025, 11, 20), site=self.site, league=self.league
         )
         game2 = Game.objects.create(
-            date=date(2025, 11, 10), site=self.site, league=self.league
+            user=self.user, date=date(2025, 11, 10), site=self.site, league=self.league
         )
         game3 = Game.objects.create(
-            date=date(2025, 11, 15), site=self.site, league=self.league
+            user=self.user, date=date(2025, 11, 15), site=self.site, league=self.league
         )
 
         games = list(Game.objects.all())
@@ -193,7 +197,7 @@ class GameModelTest(TestCase):
 
     def test_game_with_null_site_and_league(self):
         """Test that games can be created without site or league."""
-        game = Game.objects.create(date=date(2025, 11, 15), mileage=0.0)
+        game = Game.objects.create(user=self.user, date=date(2025, 11, 15), mileage=0.0)
         self.assertIsNone(game.site)
         self.assertIsNone(game.league)
 
@@ -409,6 +413,7 @@ class GameViewsTest(TestCase):
             game_fee=Decimal("50.00"),
         )
         self.game = Game.objects.create(
+            user=self.user,
             date=date(2025, 11, 15),
             site=self.site,
             league=self.league,
