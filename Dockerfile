@@ -26,6 +26,7 @@ RUN SECRET_KEY=build-placeholder \
     API_KEY=build-placeholder \
     DATABASE_URL=sqlite:///tmp/build.db \
     DEFAULT_ADDRESS=build-placeholder \
+    ALLOWED_HOSTS=localhost \
     uv run python manage.py collectstatic --noinput
 
 CMD ["uv", "run", "gunicorn", "project.wsgi", "--bind", "0.0.0.0:$PORT", "--log-file", "-"]
