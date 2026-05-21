@@ -10,8 +10,12 @@ class DistanceError(Exception):
 
 def distance_miles(origin: str, destination: str) -> float:
     """Driving distance in miles between two addresses. 0.0 on failure."""
-    gmaps = googlemaps.Client(key=settings.MAPS_API_KEY)
-    res = gmaps.distance_matrix(origin, destination, mode="driving")  # type: ignore
+    try:
+        gmaps = googlemaps.Client(key=settings.MAPS_API_KEY)
+        res = gmaps.distance_matrix(origin, destination, mode="driving")  # type: ignore
+    except Exception as e:
+        raise DistanceError(f"API request failed: {e}")
+
     try:
         el = res["rows"][0]["elements"][0]
     except (KeyError, IndexError, TypeError) as e:
