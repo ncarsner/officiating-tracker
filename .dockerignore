@@ -1,0 +1,14 @@
+.venv
+venv/
+node_modules/
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+.env
+.env.*
+db.sqlite3
+htmlcov
+.coverage
+media/
