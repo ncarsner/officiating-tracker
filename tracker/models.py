@@ -66,11 +66,13 @@ class Location(models.Model):
 
 
 class Game(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     date = models.DateField()
     # Many-to-One: many games can be played at a site
     site = models.ForeignKey("Site", on_delete=models.SET_NULL, null=True)
     # Many-to-One: many games can belong to the same league/organization
     league = models.ForeignKey("League", on_delete=models.SET_NULL, null=True)
+    fee = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     fee_paid = models.BooleanField(default=False)
     is_volunteer = models.BooleanField(default=False)
     mileage = models.FloatField(default=0.0)

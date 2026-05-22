@@ -3,6 +3,9 @@ node_modules/
 .*.md
 **/_*.html
 .DS_Store
+AGENTS/
+.claude/
+ralph.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

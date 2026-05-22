@@ -73,6 +73,7 @@ class GameForm(forms.ModelForm):
             "date",
             "site",
             "league",
+            "fee",
             "fee_paid",
             "mileage_paid",
             "mileage",
@@ -89,14 +90,14 @@ class GameForm(forms.ModelForm):
         # If creating a new game, hide mileage field
         # If editing an existing game, show mileage as editable
         if not self.instance.pk:
-            # Creating new game - hide mileage field
             self.fields["mileage"].widget = forms.HiddenInput()
             self.fields["mileage"].required = False
         else:
-            # Editing existing game - show mileage as editable
             self.fields[
                 "mileage"
             ].help_text = "Leave unchanged to recalculate, or enter custom value"
+            if self.instance.fee is None and self.instance.league_id:
+                self.initial["fee"] = self.instance.league.game_fee
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -126,6 +127,9 @@ class GameForm(forms.ModelForm):
         elif should_calculate and not instance.site:
             # No site selected, set mileage to 0
             instance.mileage = 0.0
+
+        if self.user:
+            instance.user = self.user
 
         if commit:
             instance.save()

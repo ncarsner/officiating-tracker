@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %} Stats {% endblock %}
+
+{% block content %}
+
+<h2 class="text-2xl font-bold mb-6">Stats</h2>
+
+{% with headers="Games,Total Fees,Paid Fees,Unpaid Fees,Total Miles" %}
+
+{# By Year #}
+<section class="mb-8">
+  <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">By Year</h3>
+  <div class="overflow-x-auto">
+    <table class="min-w-full border border-gray-200 bg-white dark:bg-gray-800 rounded shadow">
+      <thead class="bg-gray-100 dark:bg-gray-700">
+        <tr>
+          <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">Year</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Games</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Total Fees</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Paid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Unpaid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Miles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in by_year %}
+        <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
+          <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.year }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="px-4 py-4 text-center text-gray-500">No data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# By League #}
+<section class="mb-8">
+  <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">By League</h3>
+  <div class="overflow-x-auto">
+    <table class="min-w-full border border-gray-200 bg-white dark:bg-gray-800 rounded shadow">
+      <thead class="bg-gray-100 dark:bg-gray-700">
+        <tr>
+          <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">League</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Games</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Total Fees</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Paid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Unpaid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Miles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in by_league %}
+        <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
+          <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.league__organization|default:"—" }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="px-4 py-4 text-center text-gray-500">No data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# By Assignor #}
+<section class="mb-8">
+  <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">By Assignor</h3>
+  <div class="overflow-x-auto">
+    <table class="min-w-full border border-gray-200 bg-white dark:bg-gray-800 rounded shadow">
+      <thead class="bg-gray-100 dark:bg-gray-700">
+        <tr>
+          <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">Assignor</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Games</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Total Fees</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Paid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Unpaid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Miles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in by_assignor %}
+        <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
+          <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.league__assignor|default:"—" }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="px-4 py-4 text-center text-gray-500">No data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# By Position #}
+<section class="mb-8">
+  <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">By Position</h3>
+  <div class="overflow-x-auto">
+    <table class="min-w-full border border-gray-200 bg-white dark:bg-gray-800 rounded shadow">
+      <thead class="bg-gray-100 dark:bg-gray-700">
+        <tr>
+          <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">Position</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Games</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Total Fees</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Paid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Unpaid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Miles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in by_position %}
+        <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
+          <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.position|default:"—" }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="px-4 py-4 text-center text-gray-500">No data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# By Site #}
+<section class="mb-8">
+  <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">By Site</h3>
+  <div class="overflow-x-auto">
+    <table class="min-w-full border border-gray-200 bg-white dark:bg-gray-800 rounded shadow">
+      <thead class="bg-gray-100 dark:bg-gray-700">
+        <tr>
+          <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">Site</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Games</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Total Fees</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Paid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Unpaid</th>
+          <th class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">Miles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in by_site %}
+        <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
+          <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.site__name|default:"—" }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="px-4 py-4 text-center text-gray-500">No data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% endwith %}
+
+{% endblock %}

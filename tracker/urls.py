@@ -29,6 +29,7 @@ urlpatterns = [
     path("edit_game/<int:pk>/", views.edit_game, name="edit_game"),
     path("delete_game/<int:pk>/", views.delete_game, name="delete_game"),
     path("site_distance/", views.site_distance, name="site_distance"),
+    path("stats/", views.game_stats, name="game_stats"),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

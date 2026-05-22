@@ -1,0 +1,9 @@
+build:
+  docker:
+    web: Dockerfile
+release:
+  image: web
+  command:
+    - uv run python manage.py migrate
+run:
+  web: uv run gunicorn project.wsgi --bind 0.0.0.0:$PORT --log-file -
