@@ -28,6 +28,7 @@ class GameAdmin(admin.ModelAdmin):
 class SiteAdmin(admin.ModelAdmin):
     list_display = ("name", "address")
     search_fields = ("name",)
+    ordering = ("name",)
 
 
 @admin.register(League)
