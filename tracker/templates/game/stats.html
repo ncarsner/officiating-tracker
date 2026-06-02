@@ -28,9 +28,9 @@
         <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
           <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.year }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
-          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0"|floatformat:0 }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
         </tr>
         {% empty %}
@@ -61,9 +61,9 @@
         <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
           <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.league__organization|default:"—" }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
-          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0"|floatformat:0 }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
         </tr>
         {% empty %}
@@ -94,9 +94,9 @@
         <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
           <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.league__assignor|default:"—" }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
-          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0"|floatformat:0 }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
         </tr>
         {% empty %}
@@ -127,9 +127,9 @@
         <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
           <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.position|default:"—" }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
-          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0"|floatformat:0 }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
         </tr>
         {% empty %}
@@ -160,9 +160,9 @@
         <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
           <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.site__name|default:"—" }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.count }}</td>
-          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0.00"|floatformat:2 }}</td>
-          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0.00"|floatformat:2 }}</td>
+          <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0"|floatformat:0 }}</td>
+          <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0"|floatformat:0 }}</td>
           <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1 }}</td>
         </tr>
         {% empty %}
