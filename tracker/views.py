@@ -1,4 +1,5 @@
 from datetime import date
+from itertools import groupby
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -69,6 +70,7 @@ def game_list(request: HttpRequest) -> HttpResponse:
     f_assignor = request.GET.get("filter_assignor", "")
     f_position = request.GET.get("filter_position", "")
     f_site = request.GET.get("filter_site", "")
+    f_paid = request.GET.get("filter_paid", "unpaid")
 
     summary_qs = games
     if f_year:
@@ -81,6 +83,8 @@ def game_list(request: HttpRequest) -> HttpResponse:
         summary_qs = summary_qs.filter(position=f_position)
     if f_site:
         summary_qs = summary_qs.filter(site__name=f_site)
+    if f_paid == "unpaid":
+        summary_qs = summary_qs.filter(fee_paid=False, is_volunteer=False)
 
     eff_fee = Case(
         When(fee__isnull=False, then=F("fee")),
@@ -93,6 +97,30 @@ def game_list(request: HttpRequest) -> HttpResponse:
         paid_fees=Sum(eff_fee, filter=Q(fee_paid=True)),
         unpaid_fees=Sum(eff_fee, filter=Q(fee_paid=False, is_volunteer=False)),
         total_mileage=Sum("mileage"),
+    )
+
+    games_list = list(summary_qs.order_by("date", "site__name"))
+    games_by_month = []
+    for month_label, month_group in groupby(
+        games_list, key=lambda g: g.date.strftime("%B %Y")
+    ):
+        month_games = list(month_group)
+        date_site_groups = []
+        for (gdate, sid), ds_iter in groupby(
+            month_games, key=lambda g: (g.date, g.site_id)
+        ):
+            ds_games = list(ds_iter)
+            site_name = ds_games[0].site.name if ds_games[0].site else ""
+            trip_mileage = max((g.mileage for g in ds_games), default=0)
+            trip_mileage_paid = trip_mileage > 0 and all(
+                g.mileage_paid for g in ds_games
+            )
+            date_site_groups.append(
+                (gdate, site_name, trip_mileage, trip_mileage_paid, ds_games)
+            )
+        games_by_month.append((month_label, date_site_groups, len(month_games)))
+    expand_month = (
+        games_by_month[-1][0] if games_by_month else date.today().strftime("%B %Y")
     )
 
     available_years = list(
@@ -128,7 +156,8 @@ def game_list(request: HttpRequest) -> HttpResponse:
     )
 
     context = {
-        "games": games,
+        "games_by_month": games_by_month,
+        "expand_month": expand_month,
         "title": "Game List",
         "form": form,
         "summary": summary,
@@ -138,6 +167,7 @@ def game_list(request: HttpRequest) -> HttpResponse:
         "f_assignor": f_assignor,
         "f_position": f_position,
         "f_site": f_site,
+        "f_paid": f_paid,
         "available_years": available_years,
         "available_leagues": available_leagues,
         "available_assignors": available_assignors,
