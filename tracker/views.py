@@ -5,9 +5,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, Count, DecimalField, F, Q, Sum, When
 from django.db.models.functions import ExtractYear
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.views.decorators.http import require_POST
 
 from tracker.forms import GameForm, ProfileForm, UserForm
 from tracker.models import Game, Site
@@ -99,7 +100,9 @@ def game_list(request: HttpRequest) -> HttpResponse:
         total_mileage=Sum("mileage"),
     )
 
-    games_list = list(summary_qs.order_by("date", "site__name"))
+    games_list = list(
+        summary_qs.annotate(eff_fee_val=eff_fee).order_by("date", "site__name")
+    )
     games_by_month = []
     for month_label, month_group in groupby(
         games_list, key=lambda g: g.date.strftime("%B %Y")
@@ -222,6 +225,15 @@ def delete_game(request: HttpRequest, pk: int) -> HttpResponse:
         return redirect("game_list")
     context = {"game": game, "title": "Delete Game"}
     return render(request, "game/delete.html", context)
+
+
+@login_required
+@require_POST
+def toggle_fee_paid(request: HttpRequest, pk: int) -> JsonResponse:
+    game = get_object_or_404(Game, pk=pk, user=request.user)
+    game.fee_paid = not game.fee_paid
+    game.save(update_fields=["fee_paid"])
+    return JsonResponse({"fee_paid": game.fee_paid})
 
 
 @login_required

@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- Fee column in game list: shows effective fee per game as whole dollars ($N); volunteer games show a dash.
+- Paid toggle in game list: single-click icon in each game row fires a POST to `toggle_fee_paid`, flips `fee_paid` in place without page reload, and reverts with an alert on server error.
+- `POST /game/<id>/toggle-paid/` endpoint: flips `fee_paid`, returns `{"fee_paid": bool}`; requires login, 405 on non-POST, 404 for other users' games.
 - Unpaid/All toggle on game list: defaults to showing only unpaid, non-volunteer games on login.
 - Month grouping on game list: games collapsed by month with click-to-expand headers showing game count.
 - Date+site trip grouping: within each month, games at the same site on the same date are grouped under a trip sub-header showing mileage once rather than per game entry.
