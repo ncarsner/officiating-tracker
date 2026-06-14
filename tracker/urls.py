@@ -28,6 +28,7 @@ urlpatterns = [
     path("add_game/", views.game_create, name="add_game"),
     path("edit_game/<int:pk>/", views.edit_game, name="edit_game"),
     path("delete_game/<int:pk>/", views.delete_game, name="delete_game"),
+    path("game/<int:pk>/toggle-paid/", views.toggle_fee_paid, name="toggle_fee_paid"),
     path("site_distance/", views.site_distance, name="site_distance"),
     path("stats/", views.game_stats, name="game_stats"),
 ]
