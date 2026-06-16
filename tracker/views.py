@@ -74,16 +74,6 @@ def game_list(request: HttpRequest) -> HttpResponse:
     f_paid = request.GET.get("filter_paid", "unpaid")
 
     summary_qs = games
-    if f_year:
-        summary_qs = summary_qs.filter(date__year=f_year)
-    if f_league:
-        summary_qs = summary_qs.filter(league__organization=f_league)
-    if f_assignor:
-        summary_qs = summary_qs.filter(league__assignor=f_assignor)
-    if f_position:
-        summary_qs = summary_qs.filter(position=f_position)
-    if f_site:
-        summary_qs = summary_qs.filter(site__name=f_site)
     eff_fee = Case(
         When(fee__isnull=False, then=F("fee")),
         default=F("league__game_fee"),
