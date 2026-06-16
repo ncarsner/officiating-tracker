@@ -12,6 +12,7 @@
 - PRD and task JSON for game list UX improvements (`plans/game-list-ux-improvements-prd.md`, `plans/game-list-ux-improvements-prd.json`).
 
 ### Changed
+- Edit and Delete text buttons in the game list replaced with outlined SVG icon buttons (pen / X); amber for Edit, red for Delete; 40x40px touch targets with aria-labels for accessibility.
 - Stats page fee columns (Total Fees, Paid, Unpaid) now display as whole dollars with no decimal places across all five stat tables.
 - Game list summary widget is now responsive: single-column stack on mobile (below 640px), 2x2 grid on wider viewports.
 
