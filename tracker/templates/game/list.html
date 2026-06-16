@@ -86,13 +86,11 @@
     <thead class="bg-gray-100">
       <tr>
         <th class="px-4 py-2 text-left">Date</th>
-        <th class="px-4 py-2 text-left">Site</th>
         <th class="px-4 py-2 text-left">League</th>
         <th class="px-4 py-2 text-left">Position</th>
         <th class="px-4 py-2 text-left">Fee</th>
         <th class="px-4 py-2 text-left">Paid</th>
         <th class="px-4 py-2 text-left">Mileage</th>
-        <th class="px-4 py-2 text-left">Mileage Paid</th>
         <th class="px-4 py-2 text-left"></th>
       </tr>
     </thead>
@@ -101,7 +99,7 @@
       {% with mid=forloop.counter %}
       <tr class="cursor-pointer select-none bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
           onclick="toggleMonth({{ mid }})">
-        <td colspan="9" class="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200">
+        <td colspan="7" class="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200">
           <span id="chev-{{ mid }}">{% if month_label == expand_month %}▼{% else %}▶{% endif %}</span>
           {{ month_label }}
           <span class="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">({{ month_count }} game{{ month_count|pluralize }})</span>
@@ -109,15 +107,14 @@
       </tr>
       {% for game_date, site_name, trip_mileage, trip_mileage_paid, ds_games in date_site_groups %}
       <tr class="mg-{{ mid }} bg-blue-50 dark:bg-blue-900/20 border-t border-gray-200{% if month_label != expand_month %} hidden{% endif %}">
-        <td class="px-4 py-1 text-sm font-medium text-blue-800 dark:text-blue-200" colspan="2">{{ game_date|date:"D, N j" }} — {{ site_name }}</td>
+        <td class="px-4 py-1 text-sm font-medium text-blue-800 dark:text-blue-200">{{ game_date|date:"D, N j" }} — {{ site_name }}</td>
         <td colspan="4"></td>
         <td class="px-4 py-1 text-sm text-gray-600 dark:text-gray-400">{% if trip_mileage > 0 %}{{ trip_mileage|floatformat:1 }} mi{% endif %}</td>
-        <td class="px-4 py-1">{% if trip_mileage_paid %}{% include 'game/icon-checkmark.html' %}{% endif %}</td>
         <td></td>
       </tr>
       {% for game in ds_games %}
       <tr class="mg-{{ mid }} border-t border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800{% if month_label != expand_month %} hidden{% endif %}">
-        <td class="py-2 pl-8" colspan="2"></td>
+        <td class="py-2 pl-8"></td>
         <td class="px-4 py-2">{{ game.league.organization }}</td>
         <td class="px-4 py-2">{% if game.position %}{{ game.position }}{% endif %}</td>
         <td class="px-4 py-2 text-sm">{% if not game.is_volunteer %}${{ game.eff_fee_val|default:0|floatformat:0 }}{% else %}—{% endif %}</td>
@@ -134,7 +131,6 @@
             {% endif %}
           </button>
         </td>
-        <td></td>
         <td></td>
         <td class="px-4 py-2 space-x-2">
           <form method="get" action="{% url 'edit_game' game.id %}" class="inline">
@@ -158,7 +154,7 @@
       {% endfor %}
       {% endwith %}
       {% empty %}
-      <tr><td colspan="9" class="px-4 py-6 text-center text-gray-400 dark:text-gray-500">No games match the current filters.</td></tr>
+      <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400 dark:text-gray-500">No games match the current filters.</td></tr>
       {% endfor %}
     </tbody>
   </table>
