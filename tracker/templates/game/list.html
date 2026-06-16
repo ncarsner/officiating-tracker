@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %} Game List {% endblock %}
 
@@ -48,34 +49,34 @@
       <a href="{% url 'game_list' %}" class="w-full text-center text-sm px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition">Clear Filters</a>
 
       <div class="flex rounded overflow-hidden border border-gray-300 dark:border-gray-600 mt-1">
-        <a href="?filter_year={{ f_year }}&filter_league={{ f_league }}&filter_assignor={{ f_assignor }}&filter_position={{ f_position }}&filter_site={{ f_site }}&filter_paid=unpaid"
+        <button type="button" id="btn-paid-unpaid"
            class="flex-1 text-center text-sm px-2 py-1 transition {% if f_paid == 'unpaid' %}bg-blue-600 text-white{% else %}bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600{% endif %}">
           Unpaid
-        </a>
-        <a href="?filter_year={{ f_year }}&filter_league={{ f_league }}&filter_assignor={{ f_assignor }}&filter_position={{ f_position }}&filter_site={{ f_site }}&filter_paid=all"
+        </button>
+        <button type="button" id="btn-paid-all"
            class="flex-1 text-center text-sm px-2 py-1 transition {% if f_paid == 'all' %}bg-blue-600 text-white{% else %}bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600{% endif %}">
           All
-        </a>
+        </button>
       </div>
       {% endwith %}
     </form>
 
-    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 content-center">
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 content-center">
       <div class="text-center">
         <div class="text-xs text-gray-500 dark:text-gray-400">Games</div>
-        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ summary.count|default:"0" }}</div>
+        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ summary.count|default:"0"|intcomma }}</div>
       </div>
       <div class="text-center">
         <div class="text-xs text-gray-500 dark:text-gray-400">Total Fees</div>
-        <div class="text-2xl font-bold text-green-600 dark:text-green-400">${{ summary.total_fees|default:"0"|floatformat:0 }}</div>
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400">${{ summary.total_fees|default:"0"|floatformat:0|intcomma }}</div>
       </div>
       <div class="text-center">
         <div class="text-xs text-gray-500 dark:text-gray-400">Unpaid</div>
-        <div class="text-2xl font-bold text-red-600 dark:text-red-400">${{ summary.unpaid_fees|default:"0"|floatformat:0 }}</div>
+        <div class="text-2xl font-bold text-red-600 dark:text-red-400">${{ summary.unpaid_fees|default:"0"|floatformat:0|intcomma }}</div>
       </div>
       <div class="text-center">
         <div class="text-xs text-gray-500 dark:text-gray-400">Miles</div>
-        <div class="text-2xl font-bold text-gray-700 dark:text-gray-300">{{ summary.total_mileage|default:"0.0"|floatformat:1 }}</div>
+        <div class="text-2xl font-bold text-gray-700 dark:text-gray-300">{{ summary.total_mileage|default:"0.0"|floatformat:1|intcomma }}</div>
       </div>
     </div>
 
@@ -113,7 +114,8 @@
         <td></td>
       </tr>
       {% for game in ds_games %}
-      <tr class="mg-{{ mid }} border-t border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800{% if month_label != expand_month %} hidden{% endif %}">
+      <tr class="mg-{{ mid }} border-t border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800{% if month_label != expand_month %} hidden{% endif %}"
+          data-paid="{% if game.fee_paid or game.is_volunteer %}true{% else %}false{% endif %}">
         <td class="py-2 pl-8"></td>
         <td class="px-4 py-2">{{ game.league.organization }}</td>
         <td class="px-4 py-2">{% if game.position %}{{ game.position }}{% endif %}</td>
@@ -159,7 +161,10 @@
     </tbody>
   </table>
 
-  <style>tr.hidden { display: none !important; }</style>
+  <style>
+    tr.hidden { display: none !important; }
+    tr.paid-hidden { display: none !important; }
+  </style>
   <script>
     function toggleMonth(id) {
       const rows = document.querySelectorAll(`.mg-${id}`);
@@ -202,5 +207,28 @@
         }
       });
     });
+
+    (function() {
+      const CLS_ACTIVE = ['bg-blue-600', 'text-white'];
+      const CLS_INACTIVE = ['bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-200', 'hover:bg-gray-100', 'dark:hover:bg-gray-600'];
+      const btnUnpaid = document.getElementById('btn-paid-unpaid');
+      const btnAll = document.getElementById('btn-paid-all');
+
+      function applyPaidFilter(filter) {
+        document.querySelectorAll('tr[data-paid]').forEach(r => {
+          r.classList.toggle('paid-hidden', filter === 'unpaid' && r.dataset.paid === 'true');
+        });
+        btnUnpaid.classList.toggle('bg-blue-600', filter === 'unpaid');
+        btnUnpaid.classList.toggle('text-white', filter === 'unpaid');
+        CLS_INACTIVE.forEach(c => btnUnpaid.classList.toggle(c, filter !== 'unpaid'));
+        btnAll.classList.toggle('bg-blue-600', filter === 'all');
+        btnAll.classList.toggle('text-white', filter === 'all');
+        CLS_INACTIVE.forEach(c => btnAll.classList.toggle(c, filter !== 'all'));
+      }
+
+      btnUnpaid.addEventListener('click', () => applyPaidFilter('unpaid'));
+      btnAll.addEventListener('click', () => applyPaidFilter('all'));
+      applyPaidFilter('{{ f_paid }}');
+    })();
   </script>
 {% endblock %}

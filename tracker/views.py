@@ -84,9 +84,6 @@ def game_list(request: HttpRequest) -> HttpResponse:
         summary_qs = summary_qs.filter(position=f_position)
     if f_site:
         summary_qs = summary_qs.filter(site__name=f_site)
-    if f_paid == "unpaid":
-        summary_qs = summary_qs.filter(fee_paid=False, is_volunteer=False)
-
     eff_fee = Case(
         When(fee__isnull=False, then=F("fee")),
         default=F("league__game_fee"),
