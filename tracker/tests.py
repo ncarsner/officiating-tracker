@@ -426,7 +426,7 @@ class GameViewsTest(TestCase):
         response = self.client.get(reverse("game_list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Site")
-        self.assertIn("games", response.context)
+        self.assertIn("games_by_month", response.context)
 
     def test_game_list_view_requires_login(self):
         """Test game list view requires authentication."""
