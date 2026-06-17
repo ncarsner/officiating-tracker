@@ -64,19 +64,19 @@
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 content-center">
       <div class="text-center">
         <div class="text-xs text-gray-500 dark:text-gray-400">Games</div>
-        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ summary.count|default:"0"|intcomma }}</div>
+        <div id="metric-count" class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ summary.count|default:"0"|intcomma }}</div>
       </div>
       <div class="text-center">
         <div class="text-xs text-gray-500 dark:text-gray-400">Total Fees</div>
-        <div class="text-2xl font-bold text-green-600 dark:text-green-400">${{ summary.total_fees|default:"0"|floatformat:0|intcomma }}</div>
+        <div id="metric-total-fees" class="text-2xl font-bold text-green-600 dark:text-green-400">${{ summary.total_fees|default:"0"|floatformat:0|intcomma }}</div>
       </div>
       <div class="text-center">
         <div class="text-xs text-gray-500 dark:text-gray-400">Unpaid</div>
-        <div class="text-2xl font-bold text-red-600 dark:text-red-400">${{ summary.unpaid_fees|default:"0"|floatformat:0|intcomma }}</div>
+        <div id="metric-unpaid" class="text-2xl font-bold text-red-600 dark:text-red-400">${{ summary.unpaid_fees|default:"0"|floatformat:0|intcomma }}</div>
       </div>
       <div class="text-center">
         <div class="text-xs text-gray-500 dark:text-gray-400">Miles</div>
-        <div class="text-2xl font-bold text-gray-700 dark:text-gray-300">{{ summary.total_mileage|default:"0.0"|floatformat:1|intcomma }}</div>
+        <div id="metric-mileage" class="text-2xl font-bold text-gray-700 dark:text-gray-300">{{ summary.total_mileage|default:"0.0"|floatformat:1|intcomma }}</div>
       </div>
     </div>
 
@@ -110,7 +110,8 @@
       {% for game_date, site_name, trip_mileage, trip_mileage_paid, ds_games in date_site_groups %}
       <tr class="mg-{{ mid }} bg-blue-50 dark:bg-blue-900/20 border-t border-gray-200{% if month_label != expand_month %} hidden{% endif %}"
           data-month-id="{{ mid }}"
-          data-trip-id="{{ mid }}-{{ forloop.counter }}">
+          data-trip-id="{{ mid }}-{{ forloop.counter }}"
+          data-trip-mileage="{{ trip_mileage|floatformat:1 }}">
         <td class="px-4 py-1 text-sm font-medium text-blue-800 dark:text-blue-200">{{ game_date|date:"D, N j" }} — {{ site_name }}</td>
         <td colspan="4"></td>
         <td class="px-4 py-1 text-sm text-gray-600 dark:text-gray-400">{% if trip_mileage > 0 %}{{ trip_mileage|floatformat:1 }} mi{% endif %}</td>
@@ -125,7 +126,10 @@
           data-league="{{ game.league.organization|default:'' }}"
           data-assignor="{{ game.league.assignor|default:'' }}"
           data-position="{{ game.position|default:'' }}"
-          data-site="{{ game.site.name|default:'' }}">
+          data-site="{{ game.site.name|default:'' }}"
+          data-eff-fee="{{ game.eff_fee_val|default:0|floatformat:2 }}"
+          data-fee-paid="{{ game.fee_paid|yesno:'true,false' }}"
+          data-is-volunteer="{{ game.is_volunteer|yesno:'true,false' }}">
         <td class="py-2 pl-8"></td>
         <td class="px-4 py-2">{{ game.league.organization }}</td>
         <td class="px-4 py-2">{% if game.position %}{{ game.position }}{% endif %}</td>
@@ -224,8 +228,10 @@
           const data = await res.json();
           btn.dataset.paid = data.fee_paid ? 'true' : 'false';
           btn.innerHTML = data.fee_paid ? ICON_PAID : ICON_UNPAID;
-          // sync the row's data-paid so filtering reflects the new state
-          btn.closest('tr[data-paid]').dataset.paid = btn.dataset.paid;
+          // sync the row's data-paid and data-fee-paid so filtering and metrics reflect the new state
+          const row = btn.closest('tr[data-year]');
+          row.dataset.paid = btn.dataset.paid;
+          row.dataset.feePaid = btn.dataset.paid;
           applyAllFilters();
         } catch {
           btn.dataset.paid = wasPaid ? 'true' : 'false';
@@ -277,6 +283,37 @@
       document.querySelectorAll('tr[data-month-id]:not([data-trip-id])').forEach(r => {
         r.classList.toggle('filter-hidden', !visibleMonths.has(r.dataset.monthId));
       });
+
+      updateMetrics(visibleTrips);
+    }
+
+    function fmtMiles(v) {
+      const parts = v.toFixed(1).split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return parts.join('.');
+    }
+
+    function updateMetrics(visibleTrips) {
+      let count = 0, totalFees = 0, unpaidFees = 0;
+      document.querySelectorAll('tr[data-year]').forEach(r => {
+        if (r.classList.contains('filter-hidden')) return;
+        count++;
+        const fee = parseFloat(r.dataset.effFee) || 0;
+        totalFees += fee;
+        if (r.dataset.feePaid === 'false' && r.dataset.isVolunteer === 'false') {
+          unpaidFees += fee;
+        }
+      });
+      let miles = 0;
+      document.querySelectorAll('tr[data-trip-mileage]').forEach(r => {
+        if (!r.classList.contains('filter-hidden')) {
+          miles += parseFloat(r.dataset.tripMileage) || 0;
+        }
+      });
+      document.getElementById('metric-count').textContent = count.toLocaleString();
+      document.getElementById('metric-total-fees').textContent = '$' + Math.round(totalFees).toLocaleString();
+      document.getElementById('metric-unpaid').textContent = '$' + Math.round(unpaidFees).toLocaleString();
+      document.getElementById('metric-mileage').textContent = fmtMiles(miles);
     }
 
     function setPaidFilter(filter) {

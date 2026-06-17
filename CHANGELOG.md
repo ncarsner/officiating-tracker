@@ -7,6 +7,10 @@
 
 ### Changed
 - Unpaid/All toggle on game list is now client-side: all game rows render in DOM with `data-paid` attribute; toggling hides/shows rows instantly with no page reload or network request. Initial tab state still reflects the `f_paid` query param.
+- All 5 dropdown filters (year, league, assignor, position, site) on the game list are now client-side: selecting a value filters rows instantly with no page reload; trip sub-headers and month headers auto-hide when all their child rows are filtered out.
+- Summary metrics widget (Games, Total Fees, Unpaid, Miles) now recomputes from visible rows on every filter change; `data-eff-fee`, `data-fee-paid`, `data-is-volunteer`, and `data-trip-mileage` attributes carry the values needed for client-side aggregation.
+- Game list month expand uses a fade+slide animation (`@keyframes rowAppear`); collapse is instant.
+- Summary metrics grid collapses to 1 column below the `lg` breakpoint (mobile-friendly).
 
 ---
 
