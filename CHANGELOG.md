@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Secret scanning in pre-commit: `detect-secrets` hook with `.secrets.baseline`, plus `detect-private-key` and `check-merge-conflict`; `check-added-large-files` now capped at 500 KB (RULES.md §8).
 - Collapsible sections on Stats page: Year and League expand on load; Assignor, Position, and Site collapse. Toggle buttons have a bordered rectangle style with left-side chevron; first-column table header removed (button label serves as the group title); smooth CSS grid transition on expand/collapse.
 
 ### Changed
