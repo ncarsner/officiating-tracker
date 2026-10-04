@@ -11,6 +11,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
 from tracker.forms import GameForm, ProfileForm, UserForm
+from tracker.mileage import mileage_by, total_mileage
 from tracker.models import Game, Site
 from tracker.utils import DistanceError, distance_miles, resolve_origin
 
@@ -84,12 +85,14 @@ def game_list(request: HttpRequest) -> HttpResponse:
         total_fees=Sum(eff_fee),
         paid_fees=Sum(eff_fee, filter=Q(fee_paid=True)),
         unpaid_fees=Sum(eff_fee, filter=Q(fee_paid=False, is_volunteer=False)),
-        total_mileage=Sum("mileage"),
     )
 
     games_list = list(
         summary_qs.annotate(eff_fee_val=eff_fee).order_by("date", "site__name")
     )
+    # One trip per site per date, matching the trip rows rendered below and the
+    # client-side recomputation that replaces this value when a filter changes.
+    summary["total_mileage"] = total_mileage(games_list)
     games_by_month = []
     for month_label, month_group in groupby(
         games_list, key=lambda g: g.date.strftime("%B %Y")
@@ -231,12 +234,14 @@ def game_stats(request: HttpRequest) -> HttpResponse:
         default=F("league__game_fee"),
         output_field=DecimalField(max_digits=6, decimal_places=2),
     )
+    # Mileage is deliberately absent here. Summing Game.mileage counts the same
+    # round trip once per game worked at that site that day, so it is added
+    # afterwards from tracker.mileage instead. See issue #94.
     stat_annotations = dict(
         count=Count("id"),
         total_fees=Sum(eff_fee),
         paid_fees=Sum(eff_fee, filter=Q(fee_paid=True)),
         unpaid_fees=Sum(eff_fee, filter=Q(fee_paid=False, is_volunteer=False)),
-        total_mileage=Sum("mileage"),
     )
     by_year = (
         base_qs.annotate(year=ExtractYear("date"))
@@ -260,13 +265,33 @@ def game_stats(request: HttpRequest) -> HttpResponse:
     by_site = (
         base_qs.values("site__name").annotate(**stat_annotations).order_by("site__name")
     )
+
+    games = list(base_qs.select_related("league", "site"))
+
+    def with_trip_mileage(rows, field, group_key):
+        """Attach trip-deduplicated mileage to each aggregate row."""
+        totals = mileage_by(games, group_key)
+        return [{**row, "total_mileage": totals.get(row[field], 0.0)} for row in rows]
+
     context = {
         "title": "Stats",
-        "by_year": by_year,
-        "by_league": by_league,
-        "by_assignor": by_assignor,
+        "by_year": with_trip_mileage(by_year, "year", lambda g: g.date.year),
+        "by_league": with_trip_mileage(
+            by_league,
+            "league__organization",
+            lambda g: g.league.organization if g.league else None,
+        ),
+        "by_assignor": with_trip_mileage(
+            by_assignor,
+            "league__assignor",
+            lambda g: g.league.assignor if g.league else None,
+        ),
+        # Position carries no mileage column: several positions are worked at one
+        # site on one date, so a trip cannot be attributed to a single position.
         "by_position": by_position,
-        "by_site": by_site,
+        "by_site": with_trip_mileage(
+            by_site, "site__name", lambda g: g.site.name if g.site else None
+        ),
     }
     return render(request, "game/stats.html", context)
 

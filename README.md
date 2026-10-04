@@ -133,6 +133,7 @@ officiating-tracker/
 │   ├── forms.py           # Form definitions
 │   ├── urls.py            # App URL routing
 │   ├── utils.py           # Utility functions (mileage, et al)
+│   ├── mileage.py         # Trip-based mileage aggregation
 │   ├── tests.py           # Test suite
 │   └── templates/         # HTML templates
 │       └── game/          # Game-related templates
@@ -192,6 +193,20 @@ and the distance saved always agree.
   - If unchanged, mileage is recalculated based on current site
   - If manually changed, user's value is preserved
   - Helpful for overriding calculated values when needed
+
+### Mileage Totals
+
+One round trip is driven to a site on a given date, however many games are worked
+there that day. Every total in the application therefore counts trips, not game
+rows: three games at one site on one date contribute that trip's mileage once.
+
+This rule applies to the game list summary and to the Year, League, Assignor, and
+Site breakdowns on the Stats page. `tracker/mileage.py` is its single definition;
+do not sum `Game.mileage` directly.
+
+The Stats Position breakdown shows no mileage column. Several positions are worked
+at one site on one date, so a trip cannot be attributed to a single position without
+either double counting it or splitting it arbitrarily.
 
 ## Contributing
 
