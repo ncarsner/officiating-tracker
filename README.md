@@ -180,9 +180,10 @@ uv run pytest --cov=tracker
 
 The application uses Google Maps Distance Matrix API to automatically calculate driving distance between the user's home location and game sites.
 
-**Default origin** (for testing): `123 Main St, Nashville, TN 37203`
-
-When user authentication is fully implemented, each user's profile location will be used as the origin.
+The origin is the address on the signed-in user's profile. When that is empty, the
+application falls back to the `DEFAULT_ADDRESS` environment variable. Both the game
+form and the mileage preview resolve the origin the same way, so the distance shown
+and the distance saved always agree.
 
 ## Mileage Calculation Behavior
 

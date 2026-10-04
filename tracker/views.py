@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 
 from tracker.forms import GameForm, ProfileForm, UserForm
 from tracker.models import Game, Site
-from tracker.utils import DistanceError, distance_miles
+from tracker.utils import DistanceError, distance_miles, resolve_origin
 
 
 def home(request):
@@ -275,10 +275,11 @@ def game_stats(request: HttpRequest) -> HttpResponse:
 def site_distance(request):
     site_id = request.GET.get("site")
     miles = 0
-    if site_id and request.user.profile.location:
+    origin = resolve_origin(request.user)
+    if site_id and origin:
         try:
             site = Site.objects.get(pk=site_id)
-            miles = distance_miles(request.user.profile.location, site.address)
+            miles = distance_miles(origin, site.address)
         except DistanceError:
             miles = 0
 

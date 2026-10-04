@@ -2,13 +2,14 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from tracker.forms import GameForm, LeagueForm, SiteForm
 from tracker.models import Game, League, Location, Profile, Site
-from tracker.utils import DistanceError, distance_miles
+from tracker.utils import DistanceError, distance_miles, resolve_origin
 
 
 class ProfileModelTest(TestCase):
@@ -747,3 +748,131 @@ class GameListPostTest(TestCase):
         response = self.client.post(reverse("game_list"), data)
         self.assertEqual(response.status_code, 302)  # Redirect
         self.assertEqual(Game.objects.count(), 1)
+
+
+class ResolveOriginTest(TestCase):
+    """Tests for origin address resolution (issue #95)."""
+
+    def setUp(self):
+        """Create a user whose profile has no address set."""
+        self.user = User.objects.create_user(
+            username="originuser", password="testpass123"
+        )
+
+    def test_structured_address_is_preferred(self):
+        """A populated profile address wins over the configured default."""
+        profile = self.user.profile
+        profile.home_address = "100 Main St"
+        profile.city = "Nashville"
+        profile.state = "TN"
+        profile.zip_code = "37201"
+        profile.save()
+        self.assertEqual(resolve_origin(self.user), "100 Main St, Nashville, TN, 37201")
+
+    def test_empty_profile_falls_back_to_default(self):
+        """A profile with no address falls back to the configured default."""
+        self.assertEqual(resolve_origin(self.user), settings.DEFAULT_ADDRESS)
+
+    def test_legacy_location_is_used_when_structured_fields_empty(self):
+        """The legacy location field still serves as a fallback."""
+        profile = self.user.profile
+        profile.location = "Legacy Address"
+        profile.save()
+        self.assertEqual(resolve_origin(self.user), "Legacy Address")
+
+    def test_user_without_profile_falls_back_to_default(self):
+        """A user with no related profile does not raise."""
+        self.assertEqual(resolve_origin(None), settings.DEFAULT_ADDRESS)
+
+
+class SiteDistanceOriginTest(TestCase):
+    """The mileage preview and the saved mileage must agree (issue #95)."""
+
+    def setUp(self):
+        """Create a user with a structured address and an empty legacy field."""
+        self.user = User.objects.create_user(
+            username="previewuser", password="testpass123"
+        )
+        profile = self.user.profile
+        profile.home_address = "100 Main St"
+        profile.city = "Nashville"
+        profile.state = "TN"
+        profile.zip_code = "37201"
+        profile.location = ""
+        profile.save()
+        self.site = Site.objects.create(name="Preview Site", address="500 Far Rd")
+        self.league = League.objects.create(
+            organization="Preview League", assignor="Pat", game_fee=Decimal("50.00")
+        )
+        self.client = Client()
+        self.client.login(username="previewuser", password="testpass123")
+
+    @patch("tracker.views.distance_miles")
+    def test_preview_uses_structured_address_not_legacy_field(self, mock_distance):
+        """The preview calculates from full_address when location is empty."""
+        mock_distance.return_value = 42.0
+        response = self.client.get(reverse("site_distance"), {"site": self.site.pk})
+        self.assertEqual(response.status_code, 200)
+        mock_distance.assert_called_once_with(
+            "100 Main St, Nashville, TN, 37201", "500 Far Rd"
+        )
+        self.assertIn("42.0", response.content.decode())
+
+    @patch("tracker.views.distance_miles")
+    @patch("tracker.forms.distance_miles")
+    def test_preview_and_saved_mileage_use_the_same_origin(
+        self, mock_form_distance, mock_view_distance
+    ):
+        """Both paths resolve the same origin for the same site."""
+        mock_view_distance.return_value = 42.0
+        mock_form_distance.return_value = 42.0
+
+        self.client.get(reverse("site_distance"), {"site": self.site.pk})
+        form = GameForm(
+            data={
+                "date": "2026-04-01",
+                "site": self.site.pk,
+                "league": self.league.pk,
+                "position": "PU",
+            },
+            user=self.user,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        game = form.save()
+
+        self.assertEqual(
+            mock_view_distance.call_args.args, mock_form_distance.call_args.args
+        )
+        self.assertEqual(game.mileage, 42.0)
+
+    @patch("tracker.views.distance_miles")
+    def test_preview_falls_back_to_default_address(self, mock_distance):
+        """With no profile address, the preview uses the configured default."""
+        profile = self.user.profile
+        profile.home_address = ""
+        profile.city = ""
+        profile.state = ""
+        profile.zip_code = ""
+        profile.save()
+        mock_distance.return_value = 5.0
+        self.client.get(reverse("site_distance"), {"site": self.site.pk})
+        mock_distance.assert_called_once_with(settings.DEFAULT_ADDRESS, "500 Far Rd")
+
+    @patch("tracker.views.distance_miles")
+    def test_preview_returns_zero_on_distance_error(self, mock_distance):
+        """A failed lookup still yields zero miles, as before."""
+        mock_distance.side_effect = DistanceError("boom")
+        response = self.client.get(reverse("site_distance"), {"site": self.site.pk})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("0", response.content.decode())
+
+
+class DistanceClientFailureTest(TestCase):
+    """The Maps client failing is reported as a DistanceError."""
+
+    @patch("tracker.utils.googlemaps.Client")
+    def test_client_construction_failure_raises_distance_error(self, mock_client_class):
+        """A transport or credential failure surfaces as DistanceError."""
+        mock_client_class.side_effect = RuntimeError("no network")
+        with self.assertRaises(DistanceError):
+            distance_miles("Origin", "Destination")
