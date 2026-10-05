@@ -1,7 +1,12 @@
 node_modules/
 .vscode/
-.*.md
 .DS_Store
+
+# Local-only notes: markdown prefixed with an underscore, with or without a
+# leading dot. Named explicitly rather than ignoring every dotted markdown
+# file, so a new doc is only excluded when it opts in by name.
+._*.md
+_*.md
 AGENTS/
 .claude/
 ralph.sh
