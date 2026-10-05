@@ -1,0 +1,20 @@
+[run]
+source = tracker
+omit =
+    */migrations/*
+    */tests.py
+    */apps.py
+    */__init__.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if settings.DEBUG:
+    pass
+
+[html]
+directory = htmlcov

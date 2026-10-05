@@ -1,7 +1,6 @@
 node_modules/
 .vscode/
 .*.md
-**/_*.html
 .DS_Store
 AGENTS/
 .claude/
@@ -52,6 +51,7 @@ htmlcov/
 .nox/
 .coverage*
 .coverage.*
+!.coveragerc
 .cache
 nosetests.xml
 coverage.xml
