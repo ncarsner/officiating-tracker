@@ -1,11 +1,10 @@
 from django import forms
-from django.conf import settings
 from django.contrib.auth.models import User
 
 # from django.urls import reverse
 # from django.forms import ModelForm, DateInput
 from tracker.models import Game, League, Profile, Site
-from tracker.utils import DistanceError, distance_miles
+from tracker.utils import DistanceError, distance_miles, resolve_origin
 
 
 class UserForm(forms.ModelForm):
@@ -112,14 +111,7 @@ class GameForm(forms.ModelForm):
         if should_calculate and instance.site:
             try:
                 destination = instance.site.address
-
-                # Get origin address from user profile or settings default
-                origin = settings.DEFAULT_ADDRESS
-                if self.user and hasattr(self.user, "profile"):
-                    profile_address = self.user.profile.full_address
-                    if profile_address:
-                        origin = profile_address
-
+                origin = resolve_origin(self.user)
                 instance.mileage = distance_miles(origin, destination)
             except DistanceError:
                 # If API call fails, set mileage to 0

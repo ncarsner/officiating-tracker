@@ -2,13 +2,15 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from tracker.forms import GameForm, LeagueForm, SiteForm
+from tracker.mileage import mileage_by, total_mileage
 from tracker.models import Game, League, Location, Profile, Site
-from tracker.utils import DistanceError, distance_miles
+from tracker.utils import DistanceError, distance_miles, resolve_origin
 
 
 class ProfileModelTest(TestCase):
@@ -747,3 +749,300 @@ class GameListPostTest(TestCase):
         response = self.client.post(reverse("game_list"), data)
         self.assertEqual(response.status_code, 302)  # Redirect
         self.assertEqual(Game.objects.count(), 1)
+
+
+class TripMileageAggregationTest(TestCase):
+    """Tests for trip-based mileage aggregation (issue #94)."""
+
+    def setUp(self):
+        """Create a user, two sites, and two leagues sharing an assignor."""
+        self.user = User.objects.create_user(
+            username="tripuser", password="testpass123"
+        )
+        self.site_a = Site.objects.create(name="Site A", address="1 A St")
+        self.site_b = Site.objects.create(name="Site B", address="2 B St")
+        self.league = League.objects.create(
+            organization="League One", assignor="Pat", game_fee=Decimal("50.00")
+        )
+        self.other_league = League.objects.create(
+            organization="League Two", assignor="Pat", game_fee=Decimal("60.00")
+        )
+        self.game_date = date(2026, 4, 1)
+
+    def _game(self, site, mileage, league=None, game_date=None, position=""):
+        """Create a game owned by the test user."""
+        return Game.objects.create(
+            user=self.user,
+            date=game_date or self.game_date,
+            site=site,
+            league=league or self.league,
+            mileage=mileage,
+            position=position,
+        )
+
+    def test_mileage_by_collapses_games_at_one_site_on_one_date(self):
+        """Three games at one site on one date count the trip once."""
+        for position in ("PU", "U1", "U3"):
+            self._game(self.site_a, 20.0, position=position)
+        totals = mileage_by(Game.objects.all(), lambda g: g.site.name)
+        self.assertEqual(totals["Site A"], 20.0)
+
+    def test_mileage_by_counts_separate_sites_on_one_date(self):
+        """Two sites on the same date are two trips."""
+        self._game(self.site_a, 20.0)
+        self._game(self.site_b, 30.0)
+        totals = mileage_by(Game.objects.all(), lambda g: g.site.name)
+        self.assertEqual(totals["Site A"], 20.0)
+        self.assertEqual(totals["Site B"], 30.0)
+
+    def test_mileage_by_counts_same_site_on_separate_dates(self):
+        """The same site on two dates is two trips."""
+        self._game(self.site_a, 20.0)
+        self._game(self.site_a, 20.0, game_date=date(2026, 4, 8))
+        totals = mileage_by(Game.objects.all(), lambda g: g.site.name)
+        self.assertEqual(totals["Site A"], 40.0)
+
+    def test_mileage_by_uses_largest_value_in_a_trip(self):
+        """A trip takes the largest mileage recorded against its games."""
+        self._game(self.site_a, 0.0)
+        self._game(self.site_a, 25.0)
+        totals = mileage_by(Game.objects.all(), lambda g: g.site.name)
+        self.assertEqual(totals["Site A"], 25.0)
+
+    def test_mileage_by_handles_zero_and_missing_mileage(self):
+        """Zero mileage yields a zero total rather than an absent group."""
+        self._game(self.site_a, 0.0)
+        totals = mileage_by(Game.objects.all(), lambda g: g.site.name)
+        self.assertEqual(totals["Site A"], 0.0)
+
+    def test_mileage_by_groups_games_with_no_site(self):
+        """Games with no site group under None without raising."""
+        Game.objects.create(
+            user=self.user, date=self.game_date, site=None, mileage=12.0
+        )
+        totals = mileage_by(
+            Game.objects.all(), lambda g: g.site.name if g.site else None
+        )
+        self.assertEqual(totals[None], 12.0)
+
+    def test_total_mileage_counts_each_trip_once(self):
+        """The overall total deduplicates trips across all groups."""
+        for position in ("PU", "U1"):
+            self._game(self.site_a, 20.0, position=position)
+        self._game(self.site_b, 30.0)
+        self.assertEqual(total_mileage(Game.objects.all()), 50.0)
+
+    def test_total_mileage_of_no_games_is_zero(self):
+        """An empty set of games totals zero."""
+        self.assertEqual(total_mileage(Game.objects.none()), 0.0)
+
+    def test_stats_view_mileage_counts_trip_once_per_breakdown(self):
+        """Year, league, assignor, and site each count a shared trip once."""
+        for position in ("PU", "U1", "U3"):
+            self._game(self.site_a, 20.0, position=position)
+        client = Client()
+        client.login(username="tripuser", password="testpass123")
+        response = client.get(reverse("game_stats"))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.context["by_year"][0]["total_mileage"], 20.0)
+        self.assertEqual(response.context["by_league"][0]["total_mileage"], 20.0)
+        self.assertEqual(response.context["by_assignor"][0]["total_mileage"], 20.0)
+        self.assertEqual(response.context["by_site"][0]["total_mileage"], 20.0)
+        # The game count still reflects every game worked.
+        self.assertEqual(response.context["by_site"][0]["count"], 3)
+
+    def test_stats_site_breakdown_totals_match_year_breakdown(self):
+        """Site mileage sums to the same figure as the year breakdown."""
+        for position in ("PU", "U1"):
+            self._game(self.site_a, 20.0, position=position)
+        self._game(self.site_b, 30.0)
+        client = Client()
+        client.login(username="tripuser", password="testpass123")
+        response = client.get(reverse("game_stats"))
+
+        site_total = sum(row["total_mileage"] for row in response.context["by_site"])
+        year_total = sum(row["total_mileage"] for row in response.context["by_year"])
+        self.assertEqual(site_total, 50.0)
+        self.assertEqual(site_total, year_total)
+
+    def test_stats_position_breakdown_has_no_mileage(self):
+        """Position rows carry no mileage, since a trip spans positions."""
+        self._game(self.site_a, 20.0, position="PU")
+        client = Client()
+        client.login(username="tripuser", password="testpass123")
+        response = client.get(reverse("game_stats"))
+        for row in response.context["by_position"]:
+            self.assertNotIn("total_mileage", row)
+
+    def test_stats_shared_trip_counts_once_per_league(self):
+        """Two leagues at one site on one date each carry the trip."""
+        self._game(self.site_a, 20.0, league=self.league)
+        self._game(self.site_a, 20.0, league=self.other_league)
+        client = Client()
+        client.login(username="tripuser", password="testpass123")
+        response = client.get(reverse("game_stats"))
+
+        by_league = {
+            row["league__organization"]: row["total_mileage"]
+            for row in response.context["by_league"]
+        }
+        self.assertEqual(by_league["League One"], 20.0)
+        self.assertEqual(by_league["League Two"], 20.0)
+        # The trip itself was driven once, so the year total counts it once.
+        self.assertEqual(response.context["by_year"][0]["total_mileage"], 20.0)
+
+    def test_game_list_summary_mileage_counts_trip_once(self):
+        """The game list mileage tile matches the trip rows it renders."""
+        for position in ("PU", "U1", "U3"):
+            self._game(self.site_a, 20.0, position=position)
+        client = Client()
+        client.login(username="tripuser", password="testpass123")
+        response = client.get(reverse("game_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["summary"]["total_mileage"], 20.0)
+
+    def test_game_list_summary_mileage_matches_trip_rows(self):
+        """The tile equals the sum of the per-trip values shown in the table."""
+        for position in ("PU", "U1"):
+            self._game(self.site_a, 20.0, position=position)
+        self._game(self.site_b, 30.0)
+        client = Client()
+        client.login(username="tripuser", password="testpass123")
+        response = client.get(reverse("game_list"))
+
+        rendered_trips = sum(
+            trip_mileage
+            for _, date_site_groups, _ in response.context["games_by_month"]
+            for _, _, trip_mileage, _, _ in date_site_groups
+        )
+        self.assertEqual(response.context["summary"]["total_mileage"], rendered_trips)
+        self.assertEqual(rendered_trips, 50.0)
+
+
+class ResolveOriginTest(TestCase):
+    """Tests for origin address resolution (issue #95)."""
+
+    def setUp(self):
+        """Create a user whose profile has no address set."""
+        self.user = User.objects.create_user(
+            username="originuser", password="testpass123"
+        )
+
+    def test_structured_address_is_preferred(self):
+        """A populated profile address wins over the configured default."""
+        profile = self.user.profile
+        profile.home_address = "100 Main St"
+        profile.city = "Nashville"
+        profile.state = "TN"
+        profile.zip_code = "37201"
+        profile.save()
+        self.assertEqual(resolve_origin(self.user), "100 Main St, Nashville, TN, 37201")
+
+    def test_empty_profile_falls_back_to_default(self):
+        """A profile with no address falls back to the configured default."""
+        self.assertEqual(resolve_origin(self.user), settings.DEFAULT_ADDRESS)
+
+    def test_legacy_location_is_used_when_structured_fields_empty(self):
+        """The legacy location field still serves as a fallback."""
+        profile = self.user.profile
+        profile.location = "Legacy Address"
+        profile.save()
+        self.assertEqual(resolve_origin(self.user), "Legacy Address")
+
+    def test_user_without_profile_falls_back_to_default(self):
+        """A user with no related profile does not raise."""
+        self.assertEqual(resolve_origin(None), settings.DEFAULT_ADDRESS)
+
+
+class SiteDistanceOriginTest(TestCase):
+    """The mileage preview and the saved mileage must agree (issue #95)."""
+
+    def setUp(self):
+        """Create a user with a structured address and an empty legacy field."""
+        self.user = User.objects.create_user(
+            username="previewuser", password="testpass123"
+        )
+        profile = self.user.profile
+        profile.home_address = "100 Main St"
+        profile.city = "Nashville"
+        profile.state = "TN"
+        profile.zip_code = "37201"
+        profile.location = ""
+        profile.save()
+        self.site = Site.objects.create(name="Preview Site", address="500 Far Rd")
+        self.league = League.objects.create(
+            organization="Preview League", assignor="Pat", game_fee=Decimal("50.00")
+        )
+        self.client = Client()
+        self.client.login(username="previewuser", password="testpass123")
+
+    @patch("tracker.views.distance_miles")
+    def test_preview_uses_structured_address_not_legacy_field(self, mock_distance):
+        """The preview calculates from full_address when location is empty."""
+        mock_distance.return_value = 42.0
+        response = self.client.get(reverse("site_distance"), {"site": self.site.pk})
+        self.assertEqual(response.status_code, 200)
+        mock_distance.assert_called_once_with(
+            "100 Main St, Nashville, TN, 37201", "500 Far Rd"
+        )
+        self.assertIn("42.0", response.content.decode())
+
+    @patch("tracker.views.distance_miles")
+    @patch("tracker.forms.distance_miles")
+    def test_preview_and_saved_mileage_use_the_same_origin(
+        self, mock_form_distance, mock_view_distance
+    ):
+        """Both paths resolve the same origin for the same site."""
+        mock_view_distance.return_value = 42.0
+        mock_form_distance.return_value = 42.0
+
+        self.client.get(reverse("site_distance"), {"site": self.site.pk})
+        form = GameForm(
+            data={
+                "date": "2026-04-01",
+                "site": self.site.pk,
+                "league": self.league.pk,
+                "position": "PU",
+            },
+            user=self.user,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        game = form.save()
+
+        self.assertEqual(
+            mock_view_distance.call_args.args, mock_form_distance.call_args.args
+        )
+        self.assertEqual(game.mileage, 42.0)
+
+    @patch("tracker.views.distance_miles")
+    def test_preview_falls_back_to_default_address(self, mock_distance):
+        """With no profile address, the preview uses the configured default."""
+        profile = self.user.profile
+        profile.home_address = ""
+        profile.city = ""
+        profile.state = ""
+        profile.zip_code = ""
+        profile.save()
+        mock_distance.return_value = 5.0
+        self.client.get(reverse("site_distance"), {"site": self.site.pk})
+        mock_distance.assert_called_once_with(settings.DEFAULT_ADDRESS, "500 Far Rd")
+
+    @patch("tracker.views.distance_miles")
+    def test_preview_returns_zero_on_distance_error(self, mock_distance):
+        """A failed lookup still yields zero miles, as before."""
+        mock_distance.side_effect = DistanceError("boom")
+        response = self.client.get(reverse("site_distance"), {"site": self.site.pk})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("0", response.content.decode())
+
+
+class DistanceClientFailureTest(TestCase):
+    """The Maps client failing is reported as a DistanceError."""
+
+    @patch("tracker.utils.googlemaps.Client")
+    def test_client_construction_failure_raises_distance_error(self, mock_client_class):
+        """A transport or credential failure surfaces as DistanceError."""
+        mock_client_class.side_effect = RuntimeError("no network")
+        with self.assertRaises(DistanceError):
+            distance_miles("Origin", "Destination")

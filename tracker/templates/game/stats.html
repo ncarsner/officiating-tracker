@@ -165,10 +165,11 @@
             <th class="{{ th_cls }}">Total Fees</th>
             <th class="{{ th_cls }}">Paid</th>
             <th class="{{ th_cls }}">Unpaid</th>
-            <th class="{{ th_cls }}">Miles</th>
           </tr>
         </thead>
         <tbody>
+          {# No Miles column: multiple positions are worked at one site on one date, #}
+          {# so a trip cannot be attributed to a single position. See issue #94. #}
           {% for row in by_position %}
           <tr class="border-t hover:bg-gray-50 dark:hover:bg-gray-700">
             <td class="px-4 py-2 text-gray-800 dark:text-gray-200">{{ row.position|default:"—" }}</td>
@@ -176,10 +177,9 @@
             <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">${{ row.total_fees|default:"0"|floatformat:0|intcomma }}</td>
             <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">${{ row.paid_fees|default:"0"|floatformat:0|intcomma }}</td>
             <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">${{ row.unpaid_fees|default:"0"|floatformat:0|intcomma }}</td>
-            <td class="px-4 py-2 text-right text-gray-800 dark:text-gray-200">{{ row.total_mileage|default:"0.0"|floatformat:1|intcomma }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="6" class="px-4 py-4 text-center text-gray-500">No data</td></tr>
+          <tr><td colspan="5" class="px-4 py-4 text-center text-gray-500">No data</td></tr>
           {% endfor %}
         </tbody>
       </table>
