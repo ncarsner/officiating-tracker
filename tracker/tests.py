@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
+from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -1046,3 +1047,608 @@ class DistanceClientFailureTest(TestCase):
         mock_client_class.side_effect = RuntimeError("no network")
         with self.assertRaises(DistanceError):
             distance_miles("Origin", "Destination")
+
+
+class ToggleFeePaidTest(TestCase):
+    """Tests for the fee_paid toggle endpoint."""
+
+    def setUp(self):
+        """Create a logged-in owner with one unpaid game."""
+        self.user = User.objects.create_user(username="owner", password="testpass123")
+        self.client.login(username="owner", password="testpass123")
+        self.site = Site.objects.create(name="Toggle Site", address="1 Toggle Way")
+        self.league = League.objects.create(
+            organization="Toggle League",
+            assignor="Toggle Assignor",
+            game_fee=Decimal("40.00"),
+        )
+        self.game = Game.objects.create(
+            user=self.user,
+            date=date(2025, 5, 1),
+            site=self.site,
+            league=self.league,
+            fee_paid=False,
+        )
+
+    def test_toggle_marks_an_unpaid_game_paid(self):
+        """An unpaid game becomes paid and the new state is returned."""
+        response = self.client.post(reverse("toggle_fee_paid", args=[self.game.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"fee_paid": True})
+        self.game.refresh_from_db()
+        self.assertTrue(self.game.fee_paid)
+
+    def test_toggle_marks_a_paid_game_unpaid(self):
+        """The toggle reverses in both directions, not just to paid."""
+        self.game.fee_paid = True
+        self.game.save(update_fields=["fee_paid"])
+        response = self.client.post(reverse("toggle_fee_paid", args=[self.game.pk]))
+        self.assertEqual(response.json(), {"fee_paid": False})
+        self.game.refresh_from_db()
+        self.assertFalse(self.game.fee_paid)
+
+    def test_toggle_leaves_other_fields_untouched(self):
+        """Only fee_paid is written, so a concurrent mileage edit survives."""
+        Game.objects.filter(pk=self.game.pk).update(mileage=33.0)
+        self.client.post(reverse("toggle_fee_paid", args=[self.game.pk]))
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.mileage, 33.0)
+
+    def test_get_is_rejected(self):
+        """The toggle mutates state, so GET is not allowed."""
+        response = self.client.get(reverse("toggle_fee_paid", args=[self.game.pk]))
+        self.assertEqual(response.status_code, 405)
+        self.game.refresh_from_db()
+        self.assertFalse(self.game.fee_paid)
+
+    def test_toggle_requires_login(self):
+        """An anonymous POST is redirected and changes nothing."""
+        self.client.logout()
+        response = self.client.post(reverse("toggle_fee_paid", args=[self.game.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.game.refresh_from_db()
+        self.assertFalse(self.game.fee_paid)
+
+    def test_toggle_of_missing_game_is_404(self):
+        """A pk that does not exist is a 404, not a 500."""
+        response = self.client.post(reverse("toggle_fee_paid", args=[99999]))
+        self.assertEqual(response.status_code, 404)
+
+
+class FeeAggregationTest(TestCase):
+    """Tests for the effective-fee rollups on the game list and stats pages.
+
+    The effective fee of a game is its own ``fee`` when set and its league's
+    ``game_fee`` otherwise. These tests fix that fallback, and fix which games
+    each total includes, so the rules cannot be changed unnoticed.
+    """
+
+    def setUp(self):
+        """Build one league fee game, one overridden fee game, one volunteer."""
+        self.user = User.objects.create_user(username="fees", password="testpass123")
+        self.client.login(username="fees", password="testpass123")
+        self.site = Site.objects.create(name="Fee Site", address="1 Fee Rd")
+        self.league = League.objects.create(
+            organization="Fee League",
+            assignor="Fee Assignor",
+            game_fee=Decimal("50.00"),
+        )
+        # Falls back to the league fee of 50, and is owed.
+        self.unpaid = Game.objects.create(
+            user=self.user,
+            date=date(2025, 3, 1),
+            site=self.site,
+            league=self.league,
+            fee=None,
+            fee_paid=False,
+        )
+        # Overrides the league fee with 75, and has been paid.
+        self.paid = Game.objects.create(
+            user=self.user,
+            date=date(2025, 3, 2),
+            site=self.site,
+            league=self.league,
+            fee=Decimal("75.00"),
+            fee_paid=True,
+        )
+        # Worked for free: carries a fee on paper but is never owed.
+        self.volunteer = Game.objects.create(
+            user=self.user,
+            date=date(2025, 3, 3),
+            site=self.site,
+            league=self.league,
+            fee=None,
+            fee_paid=False,
+            is_volunteer=True,
+        )
+
+    def summary(self):
+        """The game list summary dict for the logged-in user."""
+        return self.client.get(reverse("game_list")).context["summary"]
+
+    def test_total_fees_sums_effective_fees(self):
+        """50 from the league fee, 75 from the override, 50 for the volunteer."""
+        self.assertEqual(self.summary()["total_fees"], Decimal("175.00"))
+
+    def test_league_fee_is_used_when_the_game_has_none(self):
+        """A game with no fee of its own is worth its league's game fee."""
+        self.paid.delete()
+        self.volunteer.delete()
+        self.assertEqual(self.summary()["total_fees"], Decimal("50.00"))
+
+    def test_game_fee_overrides_the_league_fee(self):
+        """A game that sets its own fee ignores the league fee entirely."""
+        self.unpaid.delete()
+        self.volunteer.delete()
+        self.assertEqual(self.summary()["total_fees"], Decimal("75.00"))
+
+    def test_a_game_with_no_fee_and_no_league_contributes_nothing(self):
+        """With neither source of a fee there is no effective fee to add."""
+        Game.objects.all().delete()
+        Game.objects.create(
+            user=self.user, date=date(2025, 3, 4), site=self.site, league=None, fee=None
+        )
+        self.assertIsNone(self.summary()["total_fees"])
+
+    def test_paid_fees_counts_only_games_marked_paid(self):
+        """Received income is the paid games alone."""
+        self.assertEqual(self.summary()["paid_fees"], Decimal("75.00"))
+
+    def test_unpaid_fees_excludes_volunteer_games(self):
+        """A volunteer game is unpaid but is not owed, so it is not counted.
+
+        Without the is_volunteer filter this would be 100.00.
+        """
+        self.assertEqual(self.summary()["unpaid_fees"], Decimal("50.00"))
+
+    def test_volunteer_games_still_count_toward_total_fees(self):
+        """Volunteer work is excluded from money owed, not from the total."""
+        summary = self.summary()
+        self.assertEqual(summary["total_fees"], Decimal("175.00"))
+        self.assertEqual(summary["count"], 3)
+
+    def test_stats_year_totals_match_the_list_summary(self):
+        """The two pages aggregate the same games the same way."""
+        summary = self.summary()
+        row = self.client.get(reverse("game_stats")).context["by_year"][0]
+        self.assertEqual(row["year"], 2025)
+        self.assertEqual(row["count"], summary["count"])
+        self.assertEqual(row["total_fees"], summary["total_fees"])
+        self.assertEqual(row["paid_fees"], summary["paid_fees"])
+        self.assertEqual(row["unpaid_fees"], summary["unpaid_fees"])
+
+    def test_stats_breakdowns_exclude_volunteer_games_from_unpaid(self):
+        """Every stats breakdown applies the volunteer rule, not just by_year."""
+        context = self.client.get(reverse("game_stats")).context
+        for key in ("by_year", "by_league", "by_assignor", "by_position", "by_site"):
+            with self.subTest(breakdown=key):
+                owed = sum(row["unpaid_fees"] or 0 for row in context[key])
+                self.assertEqual(owed, Decimal("50.00"))
+
+
+class UserIsolationTest(TestCase):
+    """One user must never read or write another user's games.
+
+    Every view filters by ``user=request.user``. These tests fail if any of
+    those filters is dropped, which a lookup by a nonexistent pk would not
+    catch.
+    """
+
+    def setUp(self):
+        """Give the owner a game, then log in as a different user."""
+        self.owner = User.objects.create_user(username="owner", password="testpass123")
+        self.intruder = User.objects.create_user(
+            username="intruder", password="testpass123"
+        )
+        self.site = Site.objects.create(name="Private Site", address="1 Private Ln")
+        self.league = League.objects.create(
+            organization="Private League",
+            assignor="Private Assignor",
+            game_fee=Decimal("60.00"),
+        )
+        self.game = Game.objects.create(
+            user=self.owner,
+            date=date(2025, 7, 4),
+            site=self.site,
+            league=self.league,
+            mileage=25.0,
+            position="Referee",
+        )
+        self.client.login(username="intruder", password="testpass123")
+
+    def test_detail_of_another_users_game_is_404(self):
+        """Reading someone else's game is refused."""
+        response = self.client.get(reverse("game_detail", args=[self.game.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_edit_form_for_another_users_game_is_404(self):
+        """The edit form is not served for someone else's game."""
+        response = self.client.get(reverse("edit_game", args=[self.game.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_edit_post_to_another_users_game_is_404(self):
+        """A crafted POST cannot overwrite someone else's game."""
+        response = self.client.post(
+            reverse("edit_game", args=[self.game.pk]),
+            {
+                "date": "2030-01-01",
+                "site": self.site.pk,
+                "league": self.league.pk,
+                "mileage": 0.0,
+                "position": "Stolen",
+            },
+        )
+        self.assertEqual(response.status_code, 404)
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.position, "Referee")
+
+    def test_delete_post_for_another_users_game_is_404(self):
+        """A crafted POST cannot delete someone else's game."""
+        response = self.client.post(reverse("delete_game", args=[self.game.pk]))
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Game.objects.filter(pk=self.game.pk).exists())
+
+    def test_toggle_on_another_users_game_is_404(self):
+        """A crafted POST cannot mark someone else's game paid."""
+        response = self.client.post(reverse("toggle_fee_paid", args=[self.game.pk]))
+        self.assertEqual(response.status_code, 404)
+        self.game.refresh_from_db()
+        self.assertFalse(self.game.fee_paid)
+
+    def test_game_list_hides_another_users_games(self):
+        """The list shows no rows, no totals, and no filter options."""
+        context = self.client.get(reverse("game_list")).context
+        self.assertEqual(context["games_by_month"], [])
+        self.assertEqual(context["summary"]["count"], 0)
+        self.assertEqual(context["summary"]["total_mileage"], 0)
+        self.assertEqual(context["available_sites"], [])
+
+    def test_stats_hide_another_users_games(self):
+        """Every stats breakdown is empty for a user with no games."""
+        context = self.client.get(reverse("game_stats")).context
+        for key in ("by_year", "by_league", "by_assignor", "by_position", "by_site"):
+            with self.subTest(breakdown=key):
+                self.assertEqual(list(context[key]), [])
+
+    def test_a_new_game_is_owned_by_its_creator(self):
+        """Saving through the form attaches the game to the logged-in user."""
+        with patch("tracker.forms.distance_miles", return_value=5.0):
+            self.client.post(
+                reverse("add_game"),
+                {
+                    "date": "2025-08-01",
+                    "site": self.site.pk,
+                    "league": self.league.pk,
+                    "mileage": 0.0,
+                    "position": "Umpire",
+                },
+            )
+        created = Game.objects.get(position="Umpire")
+        self.assertEqual(created.user, self.intruder)
+
+
+class GameListFilterOptionsTest(TestCase):
+    """Tests for the filter dropdown options built by the game list view."""
+
+    def setUp(self):
+        """Create games across two years, two leagues, and three sites."""
+        self.user = User.objects.create_user(username="filters", password="testpass123")
+        self.client.login(username="filters", password="testpass123")
+        self.alpha = Site.objects.create(name="Alpha Field", address="1 Alpha St")
+        self.bravo = Site.objects.create(name="Bravo Field", address="2 Bravo St")
+        self.zulu = Site.objects.create(name="Zulu Field", address="3 Zulu St")
+        self.east = League.objects.create(
+            organization="East League",
+            assignor="Quinn",
+            game_fee=Decimal("45.00"),
+        )
+        self.west = League.objects.create(
+            organization="West League",
+            assignor="Avery",
+            game_fee=Decimal("55.00"),
+        )
+        Game.objects.create(
+            user=self.user,
+            date=date(2024, 4, 1),
+            site=self.zulu,
+            league=self.west,
+            position="U1",
+        )
+        Game.objects.create(
+            user=self.user,
+            date=date(2025, 4, 1),
+            site=self.alpha,
+            league=self.east,
+            position="PU",
+        )
+        # A second 2025 game in the same league, to prove the lists de-duplicate.
+        Game.objects.create(
+            user=self.user,
+            date=date(2025, 5, 1),
+            site=self.bravo,
+            league=self.east,
+            position="PU",
+        )
+
+    def context(self):
+        """The game list context for the logged-in user."""
+        return self.client.get(reverse("game_list")).context
+
+    def test_years_are_distinct_and_newest_first(self):
+        """The year filter lists each year once, most recent at the top."""
+        self.assertEqual(self.context()["available_years"], [2025, 2024])
+
+    def test_leagues_are_distinct_and_alphabetical(self):
+        """Two games in one league produce one league option."""
+        self.assertEqual(
+            self.context()["available_leagues"], ["East League", "West League"]
+        )
+
+    def test_assignors_are_distinct_and_alphabetical(self):
+        """Assignors sort by name, not by the league they assign for."""
+        self.assertEqual(self.context()["available_assignors"], ["Avery", "Quinn"])
+
+    def test_sites_are_distinct_and_alphabetical(self):
+        """Every site worked appears once, in name order."""
+        self.assertEqual(
+            self.context()["available_sites"],
+            ["Alpha Field", "Bravo Field", "Zulu Field"],
+        )
+
+    def test_positions_are_distinct_and_alphabetical(self):
+        """Two games in one position produce one position option."""
+        self.assertEqual(self.context()["available_positions"], ["PU", "U1"])
+
+    def test_blank_and_missing_positions_are_not_offered(self):
+        """A game with no position must not add an empty filter option."""
+        Game.objects.create(
+            user=self.user, date=date(2025, 6, 1), site=self.alpha, position=""
+        )
+        Game.objects.create(
+            user=self.user, date=date(2025, 6, 2), site=self.alpha, position=None
+        )
+        self.assertEqual(self.context()["available_positions"], ["PU", "U1"])
+
+    def test_games_with_no_league_do_not_add_blank_options(self):
+        """A leagueless game leaves the league and assignor lists unchanged."""
+        Game.objects.create(
+            user=self.user, date=date(2025, 7, 1), site=self.alpha, league=None
+        )
+        context = self.context()
+        self.assertEqual(context["available_leagues"], ["East League", "West League"])
+        self.assertEqual(context["available_assignors"], ["Avery", "Quinn"])
+
+
+class TripGroupingTest(TestCase):
+    """Tests for how the game list groups games into trips and months."""
+
+    def setUp(self):
+        """Create a logged-in user and a pair of sites."""
+        self.user = User.objects.create_user(username="trips", password="testpass123")
+        self.client.login(username="trips", password="testpass123")
+        self.home_field = Site.objects.create(name="Home Field", address="1 Home St")
+        self.away_field = Site.objects.create(name="Away Field", address="2 Away St")
+
+    def add_game(self, day, site, mileage=12.0, mileage_paid=False):
+        """Create one game for the logged-in user in May 2025."""
+        return Game.objects.create(
+            user=self.user,
+            date=date(2025, 5, day),
+            site=site,
+            mileage=mileage,
+            mileage_paid=mileage_paid,
+        )
+
+    def trips(self):
+        """Flatten every month's trip rows into one list."""
+        context = self.client.get(reverse("game_list")).context
+        return [
+            trip
+            for _, date_site_groups, _ in context["games_by_month"]
+            for trip in date_site_groups
+        ]
+
+    def test_games_at_one_site_on_one_date_become_one_trip(self):
+        """Two games at the same place on the same day are a single drive."""
+        self.add_game(1, self.home_field)
+        self.add_game(1, self.home_field)
+        trips = self.trips()
+        self.assertEqual(len(trips), 1)
+        self.assertEqual(len(trips[0][4]), 2)
+
+    def test_two_sites_on_one_date_are_two_trips(self):
+        """Driving to a second site that day is a second trip."""
+        self.add_game(1, self.home_field)
+        self.add_game(1, self.away_field)
+        self.assertEqual(len(self.trips()), 2)
+
+    def test_a_trip_reports_the_largest_mileage_of_its_games(self):
+        """The trip distance is the longest recorded leg, not their sum."""
+        self.add_game(1, self.home_field, mileage=12.0)
+        self.add_game(1, self.home_field, mileage=18.0)
+        self.assertEqual(self.trips()[0][2], 18.0)
+
+    def test_a_trip_is_paid_only_when_every_game_in_it_is_paid(self):
+        """Reimbursement for one game of a trip does not settle the trip."""
+        self.add_game(1, self.home_field, mileage_paid=True)
+        self.add_game(1, self.home_field, mileage_paid=False)
+        self.assertFalse(self.trips()[0][3])
+
+    def test_a_trip_is_paid_when_all_of_its_games_are_paid(self):
+        """With every game reimbursed the trip reads as paid."""
+        self.add_game(1, self.home_field, mileage_paid=True)
+        self.add_game(1, self.home_field, mileage_paid=True)
+        self.assertTrue(self.trips()[0][3])
+
+    def test_a_zero_mileage_trip_is_never_paid(self):
+        """There is nothing to reimburse for a trip of no distance."""
+        self.add_game(1, self.home_field, mileage=0.0, mileage_paid=True)
+        self.assertFalse(self.trips()[0][3])
+
+    def test_a_game_with_no_site_shows_a_blank_site_name(self):
+        """A siteless game still groups, with an empty name rather than None."""
+        Game.objects.create(user=self.user, date=date(2025, 5, 1), site=None)
+        self.assertEqual(self.trips()[0][1], "")
+
+    def test_months_carry_a_label_and_a_game_count(self):
+        """Each month reports how many games it holds, not how many trips."""
+        self.add_game(1, self.home_field)
+        self.add_game(1, self.home_field)
+        context = self.client.get(reverse("game_list")).context
+        label, _, count = context["games_by_month"][0]
+        self.assertEqual(label, "May 2025")
+        self.assertEqual(count, 2)
+
+    def test_the_most_recent_month_is_expanded(self):
+        """The list opens on the latest month a game was worked."""
+        self.add_game(1, self.home_field)
+        Game.objects.create(
+            user=self.user, date=date(2025, 9, 20), site=self.away_field
+        )
+        context = self.client.get(reverse("game_list")).context
+        self.assertEqual(context["expand_month"], "September 2025")
+
+    def test_a_user_with_no_games_expands_the_current_month(self):
+        """With nothing to show the list opens on today's month."""
+        context = self.client.get(reverse("game_list")).context
+        self.assertEqual(context["games_by_month"], [])
+        self.assertEqual(context["expand_month"], date.today().strftime("%B %Y"))
+
+
+class GameFormEditTest(TestCase):
+    """Tests for how GameForm behaves on an existing game.
+
+    Creating a game always recalculates mileage. Editing one must not discard a
+    distance the user typed in by hand.
+    """
+
+    def setUp(self):
+        """Create a saved game with no fee of its own."""
+        self.user = User.objects.create_user(username="editor", password="testpass123")
+        self.site = Site.objects.create(name="Edit Site", address="1 Edit Rd")
+        self.league = League.objects.create(
+            organization="Edit League",
+            assignor="Edit Assignor",
+            game_fee=Decimal("65.00"),
+        )
+        self.game = Game.objects.create(
+            user=self.user,
+            date=date(2025, 2, 10),
+            site=self.site,
+            league=self.league,
+            fee=None,
+            mileage=30.0,
+            position="Referee",
+        )
+
+    def post_data(self, **overrides):
+        """Form data that resubmits the saved game, with optional changes."""
+        data = {
+            "date": "2025-02-10",
+            "site": self.site.pk,
+            "league": self.league.pk,
+            "mileage": 30.0,
+            "position": "Referee",
+        }
+        data.update(overrides)
+        return data
+
+    def test_the_league_fee_prefills_a_game_with_no_fee(self):
+        """Editing shows what the game is worth instead of an empty box."""
+        form = GameForm(instance=self.game, user=self.user)
+        self.assertEqual(form.initial["fee"], Decimal("65.00"))
+
+    def test_an_existing_fee_is_not_replaced_by_the_league_fee(self):
+        """A fee the user already set survives a trip through the form."""
+        self.game.fee = Decimal("90.00")
+        self.game.save(update_fields=["fee"])
+        form = GameForm(instance=self.game, user=self.user)
+        self.assertEqual(form.initial["fee"], Decimal("90.00"))
+
+    def test_a_game_with_no_league_is_not_prefilled(self):
+        """With no league there is no fee to fall back on."""
+        self.game.league = None
+        self.game.save(update_fields=["league"])
+        form = GameForm(instance=self.game, user=self.user)
+        self.assertIsNone(form.initial.get("fee"))
+
+    def test_mileage_is_editable_with_help_text_when_editing(self):
+        """Editing exposes mileage so a user can correct it."""
+        form = GameForm(instance=self.game, user=self.user)
+        self.assertNotIsInstance(form.fields["mileage"].widget, forms.HiddenInput)
+        self.assertIn("recalculate", form.fields["mileage"].help_text)
+
+    def test_mileage_is_hidden_and_optional_when_creating(self):
+        """A new game calculates its own mileage, so the field is hidden."""
+        form = GameForm(user=self.user)
+        self.assertIsInstance(form.fields["mileage"].widget, forms.HiddenInput)
+        self.assertFalse(form.fields["mileage"].required)
+
+    @patch("tracker.forms.distance_miles")
+    def test_a_hand_edited_mileage_is_kept(self, mock_distance):
+        """A typed distance is not overwritten by the Maps lookup."""
+        mock_distance.return_value = 99.0
+        form = GameForm(
+            self.post_data(mileage=42.5), instance=self.game, user=self.user
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        game = form.save()
+        self.assertEqual(game.mileage, 42.5)
+        mock_distance.assert_not_called()
+
+    @patch("tracker.forms.distance_miles")
+    def test_an_untouched_mileage_is_recalculated(self, mock_distance):
+        """Leaving mileage alone refreshes it, which is what the help text says."""
+        mock_distance.return_value = 99.0
+        form = GameForm(self.post_data(), instance=self.game, user=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        game = form.save()
+        self.assertEqual(game.mileage, 99.0)
+        mock_distance.assert_called_once()
+
+    @patch("tracker.forms.distance_miles")
+    def test_a_failed_lookup_on_edit_zeroes_the_mileage(self, mock_distance):
+        """A recalculation that cannot reach the API falls back to zero."""
+        mock_distance.side_effect = DistanceError("boom")
+        form = GameForm(self.post_data(), instance=self.game, user=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.save().mileage, 0.0)
+
+    def test_saving_without_a_user_leaves_the_owner_alone(self):
+        """GameForm is usable without a user, as the mileage preview does."""
+        with patch("tracker.forms.distance_miles", return_value=7.0):
+            game = GameForm(self.post_data(), instance=self.game).save()
+        self.assertEqual(game.user, self.user)
+
+
+class LoginRequiredTest(TestCase):
+    """Every view that touches a user's data must demand a login."""
+
+    def setUp(self):
+        """Create a game to address, but do not log anybody in."""
+        user = User.objects.create_user(username="absent", password="testpass123")
+        site = Site.objects.create(name="Closed Site", address="1 Closed Way")
+        self.game = Game.objects.create(user=user, date=date(2025, 1, 1), site=site)
+
+    def test_protected_views_redirect_anonymous_visitors(self):
+        """An anonymous GET is redirected to the login page, not served."""
+        urls = [
+            reverse("game_list"),
+            reverse("game_stats"),
+            reverse("add_game"),
+            reverse("profile_view"),
+            reverse("profile_edit"),
+            reverse("site_distance"),
+            reverse("game_detail", args=[self.game.pk]),
+            reverse("edit_game", args=[self.game.pk]),
+            reverse("delete_game", args=[self.game.pk]),
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 302)
+                self.assertIn(settings.LOGIN_URL, response["Location"])
+
+    def test_the_home_page_is_public(self):
+        """The landing page is reachable without an account."""
+        self.assertEqual(self.client.get(reverse("home")).status_code, 200)
