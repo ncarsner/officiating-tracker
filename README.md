@@ -155,21 +155,35 @@ officiating-tracker/
 
 Run the test suite:
 
-**Note**: The test suite is currently incomplete and under active development.
-
 ```bash
 # Run all tests
-uv run python manage.py test
-
-# Run specific test class
-uv run python manage.py test tracker.tests.GameModelTest
-
-# Run with pytest
 uv run pytest
 
-# Run with coverage
-uv run pytest --cov=tracker
+# Run a single test class
+uv run pytest -k GameModelTest
+
+# Run with coverage, including a report of any uncovered lines
+uv run coverage run -m pytest && uv run coverage report -m
 ```
+
+The suite covers every statement in `tracker/`. One branch in `GameForm.save`
+is excluded rather than tested: it handles a game saved without a site, which
+form validation cannot produce while `site` is a required field. The exclusion
+is annotated in place.
+
+Coverage alone is not the goal, so the tests also fix the rules that are easy
+to change by accident:
+
+- The effective fee of a game, which is its own fee when set and its league
+  fee otherwise.
+- Which games each money total includes. Volunteer games count toward total
+  fees but are never counted as owed.
+- Mileage counted once per trip rather than once per game. See Mileage
+  Totals below.
+- A trip counted as reimbursed only when every game on it is reimbursed.
+- A mileage a user typed by hand surviving an edit instead of being
+  recalculated.
+- One user never reading or writing another user's games.
 
 ## Development Tools
 

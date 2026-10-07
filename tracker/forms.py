@@ -116,8 +116,12 @@ class GameForm(forms.ModelForm):
             except DistanceError:
                 # If API call fails, set mileage to 0
                 instance.mileage = 0.0
-        elif should_calculate and not instance.site:
-            # No site selected, set mileage to 0
+        elif should_calculate and not instance.site:  # pragma: no cover
+            # Unreachable through the form: Game.site is null=True but not
+            # blank=True, so the ModelForm field is required and validation
+            # rejects a siteless game before save runs. Kept as the correct
+            # behavior for the day site becomes optional, such as for a game
+            # whose location is not yet known.
             instance.mileage = 0.0
 
         if self.user:
